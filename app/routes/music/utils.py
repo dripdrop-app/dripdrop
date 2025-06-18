@@ -12,7 +12,7 @@ from sqlalchemy import select
 from app.logger import logger
 from app.music.models import MusicJob
 from app.music.responses import TagsResponse
-from app.services import database, http_client, image_downloader, s3, temp_files
+from app.services import database, http_client, image_downloader, s3, tempfiles
 from app.services.audio_tag import AudioTags
 
 
@@ -97,7 +97,7 @@ async def handle_audio_file(job_id: str, file: UploadFile):
 async def read_tags(file: bytes, filename: str):
     TAGS_DIRECTORY = "tags"
 
-    tags_directory_path = await temp_files.create_new_directory(
+    tags_directory_path = await tempfiles.create_new_directory(
         directory=TAGS_DIRECTORY, raise_on_exists=False
     )
     directory_id = str(uuid.uuid4())

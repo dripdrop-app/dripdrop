@@ -13,7 +13,7 @@ from app.app import app
 from app.authentication.dependencies import COOKIE_NAME
 from app.authentication.models import User
 from app.models import Base
-from app.services import database, http_client, redis_client, s3, temp_files
+from app.services import database, http_client, redis_client, s3, tempfiles
 from app.settings import ENV, settings
 
 T = TypeVar("T")
@@ -24,7 +24,7 @@ class BaseTest(IsolatedAsyncioTestCase):
         self.maxDiff = None
         self.assertEqual(settings.env, ENV.TESTING)
         await self.delete_temp_directories()
-        await temp_files._create_temp_directory()
+        await tempfiles._create_temp_directory()
         async with database.engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
@@ -45,7 +45,7 @@ class BaseTest(IsolatedAsyncioTestCase):
 
     async def delete_temp_directories(self):
         try:
-            await asyncio.to_thread(shutil.rmtree, temp_files.TEMP_DIRECTORY)
+            await asyncio.to_thread(shutil.rmtree, tempfiles.TEMP_DIRECTORY)
         except Exception:
             pass
 

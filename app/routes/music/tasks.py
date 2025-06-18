@@ -17,7 +17,7 @@ from app.services import (
     invidious,
     rq_client,
     s3,
-    temp_files,
+    tempfiles,
     ytdlp,
 )
 from app.services.audio_tag import AudioTags
@@ -90,7 +90,7 @@ async def run_music_job(music_job_id: str, session: AsyncSession):
     JOB_DIR = "music_jobs"
 
     job_id = music_job_id
-    root_job_path = await temp_files.create_new_directory(
+    root_job_path = await tempfiles.create_new_directory(
         directory=JOB_DIR, raise_on_exists=False
     )
     query = select(MusicJob).where(MusicJob.id == job_id)

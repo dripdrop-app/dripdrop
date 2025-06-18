@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app.base.test import BaseTest
 from app.music.models import MusicJob
-from app.services import temp_files
+from app.services import tempfiles
 from app.services.audio_tag import AudioTags
 
 
@@ -97,7 +97,7 @@ class MusicBaseTest(BaseTest):
         return job
 
     async def get_tags_from_file(self, file: bytes):
-        path = os.path.join(temp_files.TEMP_DIRECTORY, "test.mp3")
+        path = os.path.join(tempfiles.TEMP_DIRECTORY, "test.mp3")
         with open(path, "wb") as f:
             f.write(file)
         return AudioTags(file_path=path)
