@@ -1,11 +1,14 @@
-FROM python:3.12-alpine
-RUN apk add ffmpeg bash curl --no-cache
-RUN pip install -U pip
-RUN pip install uv
-RUN mkdir -p /src
-WORKDIR /src
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm
+
+WORKDIR /app
+
 COPY ./uv.lock ./uv.lock
 COPY ./pyproject.toml ./pyproject.toml
+
 RUN uv sync
+
 COPY . .
-RUN chmod +x ./scripts/*
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+CMD ["litestar", "run", "--host", "0.0.0.0"]

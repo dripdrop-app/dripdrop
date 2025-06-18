@@ -1,33 +1,51 @@
 [project]
-authors = [
-    {name = "Mohamed Raffik"},
-]
-requires-python = "<4.0,>=3.12"
-dependencies = [
-    "alembic<2.0.0,>=1.8.1",
-    "fastapi[all]>=0.100.0",
-    "croniter>=5.0.0",
-    "boto3<2.0.0,>=1.24.73",
-    "redis<5.3.0,>=5.2.1",
-    "rq<2.0.0,>=1.11.0",
-    "yt-dlp[curl-cffi,default]<2025.2.20,>=2025.2.19",
-    "mutagen<2.0.0,>=1.45.1",
-    "flake8>=7.0.0",
-    "psycopg2-binary<3.0.0,>=2.9.3",
-    "beautifulsoup4<5.0.0,>=4.11.1",
-    "watchfiles>=0.24.0",
-    "sqlalchemy[asyncio]>=2.0.2,<3.0.0",
-    "asyncpg<1.0.0,>=0.30.0",
-    "pyjwt[crypto]<3.0.0,>=2.6.0",
-    "passlib[bcrypt]<2.0.0,>=1.7.4",
-    "aiosqlite<1.0.0,>=0.20.0",
-    "httpx<1.0.0,>=0.27.0",
-    "fake-useragent<2.1.1,>=2.1.0",
-    "sendgrid<7.0.0,>=6.10.0",
-    "apscheduler<4.0.0,>=3.10.1",
-    "ruff>=0.9.7",
-    "pre-commit>=4.1.0",
-]
 name = "dripdrop"
 version = "0.1.0"
-description = ""
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiofiles>=24.1.0",
+    "asyncpg>=0.30.0",
+    "bcrypt>=4.3.0",
+    "boto3>=1.38.38",
+    "bs4>=0.0.2",
+    "celery[redis]>=5.5.3",
+    "commitizen>=4.8.3",
+    "fake-useragent>=2.2.0",
+    "faker>=37.4.0",
+    "fastapi[all]>=0.115.13",
+    "httpx>=0.28.1",
+    "mutagen>=1.47.0",
+    "pre-commit>=4.2.0",
+    "pydantic-settings>=2.9.1",
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.2.1",
+    "smtp2go>=2.3.1",
+    "yt-dlp>=2025.6.9",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.0",
+]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+version_provider = "uv"
+update_changelog_on_bump = true
+major_version_zero = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+
+[tool.coverage.run]
+omit = [
+    "*/db/migrations/*",
+    "*/tests/*"
+]
