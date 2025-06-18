@@ -3,8 +3,8 @@ from datetime import datetime
 from sqlalchemy import TIMESTAMP, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.authentication.models import User
-from app.base.models import Base
+from app.db import Base
+from app.db.models.user import User
 
 
 class YoutubeUserChannel(Base):
