@@ -1,6 +1,6 @@
 .PHONY: makemigration
 makemigration:
-	infisical run --env=dev -- uv run litestar database make-migration --auto-generate
+	infisical run --env=dev -- uv run alembic -c app/db/alembic.ini revision --auto-generate
 
 .PHONY: install
 install:
@@ -24,11 +24,12 @@ deploy-local:
 
 .PHONY: run-dev
 run-dev:
-	infisical run --env=dev -- uv run litestar run --debug --reload
+	infisical run --env=dev -- uv run fastapi dev
 
-.PHONY: worker-dev
-worker-dev:
-	infisical run --env=dev -- uv run litestar workers run --verbose --debug
+# Replace with celery command
+# .PHONY: worker-dev
+# worker-dev:
+# 	infisical run --env=dev -- uv run litestar workers run --verbose --debug
 
 .PHONY: clean
 clean:
