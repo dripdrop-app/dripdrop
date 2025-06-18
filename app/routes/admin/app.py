@@ -4,14 +4,14 @@ from typing import Optional
 from fastapi import Depends, FastAPI, Query, Response, status
 from pydantic import EmailStr
 
-from app.authentication.dependencies import get_admin_user
+from app.dependencies import get_admin_user_from_token
 from app.music import tasks as music_tasks
 from app.services import rq_client
 from app.youtube import tasks as youtube_tasks
 
 app = FastAPI(
     openapi_tags=["Admin"],
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_admin_user_from_token)],
     responses={status.HTTP_403_FORBIDDEN: {}},
 )
 
