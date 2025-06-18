@@ -11,4 +11,4 @@ COPY . .
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["litestar", "run", "--host", "0.0.0.0"]
+CMD ["fastapi", "run", "--host", "0.0.0.0"]
