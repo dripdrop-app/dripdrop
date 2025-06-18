@@ -6,15 +6,24 @@ import re
 import shutil
 import traceback
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
 
 import aiofiles.os
 import mutagen.id3
 
-from app.models.music import TagsResponse
 from app.services import tempfiles
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class Tags:
+    title: str | None
+    artist: str | None
+    album: str | None
+    grouping: str | None
+    artwork_url: str | None
 
 
 class AudioTags:
@@ -108,12 +117,12 @@ class AudioTags:
         directory_path = Path(tags_directory_path).joinpath(directory_id)
         await aiofiles.os.mkdir(directory_path)
         file_path = Path(directory_path).joinpath(filename)
-        tags = TagsResponse()
+        tags = Tags()
         try:
             async with aiofiles.open(file_path, mode="wb") as f:
                 await f.write(file)
             audio_tags = await asyncio.to_thread(AudioTags, file_path)
-            tags = TagsResponse(
+            tags = Tags(
                 title=audio_tags.title,
                 artist=audio_tags.artist,
                 album=audio_tags.album,
