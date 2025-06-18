@@ -21,13 +21,13 @@ class Settings(BaseSettings):
     aws_s3_artwork_folder: str
     aws_s3_bucket: str
     aws_s3_music_folder: str
-    database_url: str
     env: ENV = ENV.DEVELOPMENT
     google_api_key: str
     invidious_api_url: str
     redis_url: str
     secret_key: str
     sendgrid_api_key: str
+    smtp2go_api_key: str
     test_async_database_url: str
     test_aws_s3_bucket: str
     test_redis_url: str
