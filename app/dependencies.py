@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-import jwt
 from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
@@ -9,11 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import session_maker
 from app.db.models.user import User
-from app.settings import settings
+from app.services.jwt import decode_jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-Token = Annotated[str, Depends(oauth2_scheme)]
 
 
 @asynccontextmanager
@@ -25,8 +22,10 @@ async def provide_session():
 DatabaseSession = Annotated[AsyncSession, Depends(provide_session)]
 
 
-async def get_user_from_token(db_session: DatabaseSession, token: Token):
-    payload = jwt.decode(token, key=settings.secret_key, algorithms=["HS256"])
+async def get_user_from_token(
+    db_session: DatabaseSession, token: Annotated[str | None, Depends(oauth2_scheme)]
+):
+    payload = decode_jwt(token)
     if username := payload.get("sub"):
         query = select(User).where(User.email == username)
         user = await db_session.scalar(query)
@@ -40,13 +39,7 @@ TokenUser = Annotated[User | None, Depends(get_user_from_token)]
 async def get_user_from_cookie(
     db_session: DatabaseSession, token: Annotated[str | None, Cookie()]
 ):
-    if token:
-        payload = jwt.decode(token, key=settings.secret_key, algorithms=["HS256"])
-        if username := payload.get("sub"):
-            query = select(User).where(User.email == username)
-            user = await db_session.scalar(query)
-            return user
-    return None
+    return await get_user_from_token(db_session=db_session, token=token)
 
 
 CookieUser = Annotated[User | None, Depends(get_user_from_cookie)]
