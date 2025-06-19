@@ -4,7 +4,7 @@ from sqlalchemy import TIMESTAMP, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
-from app.db.models.user import User
+from app.db.models import User
 
 
 class YoutubeUserChannel(Base):
