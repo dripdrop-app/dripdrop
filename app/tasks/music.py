@@ -1,5 +1,4 @@
 import asyncio
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -89,9 +88,7 @@ async def run_music_job(self: QueueTask, music_job_id: str):
     async with self.db_session() as db_session:
         music_job = await db_session.get_one(MusicJob, music_job_id)
         await pubsub.publish_message(
-            json.dumps(
-                MusicJobUpdateResponse(id=music_job_id, status="STARTED").model_dump()
-            ),
+            MusicJobUpdateResponse(id=music_job_id, status="STARTED").model_dump_json()
         )
 
         if not (filename := await retrieve_audio_file(music_job=music_job)):
@@ -128,7 +125,7 @@ async def run_music_job(self: QueueTask, music_job_id: str):
         await db_session.commit()
 
         await pubsub.publish_message(
-            json.dumps(
-                MusicJobUpdateResponse(id=music_job_id, status="COMPLETED").model_dump()
-            ),
+            MusicJobUpdateResponse(
+                id=music_job_id, status="COMPLETED"
+            ).model_dump_json()
         )
