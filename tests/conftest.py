@@ -9,7 +9,8 @@ from app import app
 from app.clients import s3
 from app.clients.pubsub import PubSub
 from app.db import Base, engine, session_maker
-from app.db.models import MusicJob, User
+from app.db.models.music import MusicJob
+from app.db.models.user import User
 from app.services import tempfiles
 from app.settings import ENV, settings
 

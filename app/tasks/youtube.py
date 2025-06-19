@@ -6,8 +6,8 @@ from sqlalchemy import and_, delete, false, select
 
 from app.clients import google
 from app.clients.pubsub import PubSub
-from app.db.models import (
-    User,
+from app.db.models.user import User
+from app.db.models.youtube import (
     YoutubeChannel,
     YoutubeNewSubscription,
     YoutubeSubscription,

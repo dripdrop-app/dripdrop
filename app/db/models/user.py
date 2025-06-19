@@ -7,8 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
 if TYPE_CHECKING:
-    from app.db.models import (
-        MusicJob,
+    from app.db.models.music import MusicJob
+    from app.db.models.youtube import (
         YoutubeSubscription,
         YoutubeUserChannel,
         YoutubeVideoLike,

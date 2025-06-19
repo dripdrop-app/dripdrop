@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.clients import imagedownloader, s3
 from app.db import Base, get_session
-from app.db.models import User
+from app.db.models.user import User
 from app.settings import settings
 
 
