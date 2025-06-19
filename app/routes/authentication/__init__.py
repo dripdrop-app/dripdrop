@@ -31,7 +31,7 @@ from app.models.authentication import (
 from app.services.jwt import create_jwt
 from app.tasks.email import send_password_reset_email, send_verification_email
 
-router = APIRouter(prefix="/auth", openapi_tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.get(
