@@ -120,7 +120,7 @@ async def create_account(
 async def verify_email(
     db_session: DatabaseSession,
     redis: RedisClient,
-    token: str = Query(...),
+    token: Annotated[str, Query()],
 ):
     if email := await redis.get(f"verify:{token}"):
         email = email.decode()
