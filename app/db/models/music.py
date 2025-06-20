@@ -1,8 +1,9 @@
 import base64
+import uuid
+from dataclasses import dataclass
 from datetime import datetime
 
 import httpx
-from fastapi import UploadFile
 from sqlalchemy import TIMESTAMP, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -12,10 +13,17 @@ from app.db.models.user import User
 from app.settings import settings
 
 
+@dataclass
+class MusicFile:
+    file: bytes
+    filename: str
+    content_type: str
+
+
 class MusicJob(Base):
     __tablename__ = "music_jobs"
 
-    id: Mapped[str] = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(primary_key=True, default=lambda: str(uuid.uuid4()))
     user_email: Mapped[str] = mapped_column(
         ForeignKey(
             "users.email",
@@ -25,6 +33,10 @@ class MusicJob(Base):
         ),
         nullable=False,
     )
+    title: Mapped[str] = mapped_column(nullable=False)
+    artist: Mapped[str] = mapped_column(nullable=False)
+    album: Mapped[str] = mapped_column(nullable=False)
+    grouping: Mapped[str | None] = mapped_column(nullable=True)
     artwork_url: Mapped[str | None] = mapped_column(nullable=True)
     artwork_filename: Mapped[str | None] = mapped_column(nullable=True)
     original_filename: Mapped[str | None] = mapped_column(nullable=True)
@@ -32,12 +44,8 @@ class MusicJob(Base):
     video_url: Mapped[str | None] = mapped_column(nullable=True)
     download_filename: Mapped[str | None] = mapped_column(nullable=True)
     download_url: Mapped[str | None] = mapped_column(nullable=True)
-    title: Mapped[str] = mapped_column(nullable=False)
-    artist: Mapped[str] = mapped_column(nullable=False)
-    album: Mapped[str] = mapped_column(nullable=False)
-    grouping: Mapped[str | None] = mapped_column(nullable=True)
-    completed: Mapped[bool] = mapped_column(nullable=False)
-    failed: Mapped[bool] = mapped_column(nullable=False)
+    completed: Mapped[datetime] = mapped_column(nullable=True)
+    failed: Mapped[datetime] = mapped_column(nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True
     )
@@ -51,11 +59,13 @@ class MusicJob(Base):
         if self.original_filename:
             await s3.delete_file(filename=self.original_filename)
 
-    async def _upload_audio_file(self, file: UploadFile):
-        filename = f"{settings.aws_s3_music_folder}/{self.id}/old/{file.filename}"
+    async def _upload_audio_file(self, music_file: MusicFile):
+        filename = f"{settings.aws_s3_music_folder}/{self.id}/old/{music_file.filename}"
         url = s3.resolve_url(filename=filename)
         await s3.upload_file(
-            filename=filename, body=await file.read(), content_type=file.content_type
+            filename=filename,
+            body=music_file.file,
+            content_type=music_file.content_type,
         )
         self.original_filename = filename
         self.filename_url = url
@@ -85,12 +95,12 @@ class MusicJob(Base):
                     self.artwork_url = artwork_url
 
     async def upload_files(
-        self, file: UploadFile | None = None, artwork_url: str | None = None
+        self, music_file: MusicFile | None = None, artwork_url: str | None = None
     ):
         async with get_session() as db_session:
-            if file:
-                await self._upload_audio_file(file=file)
+            if music_file:
+                await self._upload_audio_file(music_file=music_file)
             if artwork_url:
                 await self._upload_artwork_url(artwork_url=artwork_url)
-            await db_session.add(self)
+            db_session.add(self)
             await db_session.commit()

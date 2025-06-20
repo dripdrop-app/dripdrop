@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, status
 
-from app.db import MusicJob
+from app.db import MusicFile, MusicJob
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
 from app.models.music import CreateMusicJob
 from app.tasks.music import run_music_job
@@ -48,8 +48,17 @@ async def create_job(
     )
     session.add(music_job)
     await session.commit()
-    background_tasks.add_task(music_job.upload_files, form.file, form.artwork_url)
+    background_tasks.add_task(
+        music_job.upload_files,
+        MusicFile(
+            file=await form.file.read(),
+            filename=form.file.filename,
+            content_type=form.file.content_type,
+        ),
+        form.artwork_url,
+    )
     background_tasks.add_task(run_music_job.delay, music_job_id=str(music_job.id))
+    return None
 
 
 # @api.delete(
