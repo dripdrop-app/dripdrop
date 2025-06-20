@@ -48,6 +48,8 @@ async def db_session():
         await conn.run_sync(Base.metadata.create_all)
     async with session_maker() as session:
         yield session
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
 
@@ -189,10 +191,12 @@ async def create_music_job(db_session: AsyncSession, faker: Faker):
         )
         db_session.add(music_job)
         await db_session.commit()
+        db_session.expunge(music_job)
         await music_job.upload_files(
-            file=file,
+            music_file=file,
             artwork_url=artwork_url,
         )
+        db_session.add(music_job)
         return music_job
 
     return _run

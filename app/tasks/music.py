@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import aiofiles
@@ -121,7 +121,7 @@ async def run_music_job(self: QueueTask, music_job_id: str):
 
         music_job.download_filename = new_filename
         music_job.download_url = s3.resolve_url(filename=new_filename)
-        music_job.completed = datetime.now(tz=UTC)
+        music_job.completed = datetime.now(timezone.utc)
         await db_session.commit()
 
         await pubsub.publish_message(
