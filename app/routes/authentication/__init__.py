@@ -106,7 +106,7 @@ async def create_account(
     db_session.add(user)
     await db_session.commit()
     background_tasks.add_task(
-        send_verification_email, email=body.email, base_url=request.base_url
+        send_verification_email.delay, email=body.email, base_url=str(request.base_url)
     )
     return Response(None)
 

@@ -19,10 +19,7 @@ async def test_create_when_user_exists(client, faker, create_user):
         URL, json={"email": user.email, "password": faker.password()}
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {
-        "detail": "User with this email exists.",
-        "status_code": status.HTTP_400_BAD_REQUEST,
-    }
+    assert response.json() == {"detail": "Account exists."}
 
 
 async def test_create(client, faker, db_session, monkeypatch):
@@ -32,7 +29,7 @@ async def test_create(client, faker, db_session, monkeypatch):
     """
 
     mock_task = MagicMock()
-    monkeypatch.setattr("app.queue.email.send_verification_email.delay", mock_task)
+    monkeypatch.setattr("app.tasks.email.send_verification_email.delay", mock_task)
 
     email = faker.email()
     password = faker.password()
