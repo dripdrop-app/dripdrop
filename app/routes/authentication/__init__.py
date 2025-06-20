@@ -178,7 +178,7 @@ async def reset_password(
             user.set_password(body.password)
             await db_session.commit()
             await redis.delete(f"reset:{body.token}")
-            return Response(None)
+            return None
         raise HTTPException(
             detail="Account does not exist.", status_code=status.HTTP_400_BAD_REQUEST
         )
