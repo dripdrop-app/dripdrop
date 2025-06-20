@@ -8,7 +8,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from app.settings import settings
 
 engine = create_async_engine(settings.async_database_url)
-session_maker = async_sessionmaker(engine)
+session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
 @asynccontextmanager
@@ -28,3 +28,8 @@ class Base(DeclarativeBase):
         nullable=True,
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+
+from .models.music import *  # noqa: E402, F403
+from .models.user import *  # noqa: E402, F403
+from .models.youtube import *  # noqa: E402, F403
