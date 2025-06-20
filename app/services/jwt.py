@@ -5,11 +5,11 @@ import jwt
 
 from app.settings import settings
 
-ALGORITHM = ["HS256"]
+ALGORITHM = "HS256"
 
 
 async def create_jwt(email: str):
-    return asyncio.to_thread(
+    return await asyncio.to_thread(
         jwt.encode,
         payload={
             "email": email,
