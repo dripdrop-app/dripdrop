@@ -22,8 +22,9 @@ async def provide_redis():
     redis = Redis.from_url(settings.redis_url)
     try:
         yield redis
-    except Exception:
+    except Exception as e:
         await redis.aclose()
+        raise e
 
 
 RedisClient = Annotated[Redis, Depends(provide_redis)]
