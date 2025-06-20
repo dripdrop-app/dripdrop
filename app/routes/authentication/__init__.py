@@ -11,9 +11,10 @@ from fastapi import (
     Response,
     status,
 )
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 
-from app.db.models.user import User
+from app.db import User
 from app.dependencies import (
     AuthUser,
     DatabaseSession,
@@ -53,13 +54,13 @@ async def login(db_session: DatabaseSession, body: Annotated[LoginUser, Body()])
     if user := await db_session.scalar(query):
         if user.verified:
             if user.check_password(body.password):
-                token = create_jwt(email=body.email)
-                response = Response(
+                token = await create_jwt(email=body.email)
+                response = JSONResponse(
                     content=AuthenticatedResponse(
                         access_token=token,
                         token_type="Bearer",
                         user=UserResponse.model_validate(user),
-                    )
+                    ).model_dump()
                 )
                 response.set_cookie(key="token", value=token)
                 return response
