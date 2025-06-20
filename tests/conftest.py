@@ -6,10 +6,9 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import app
-from app.clients import s3
-from app.clients.pubsub import PubSub
 from app.db import Base, MusicJob, User, engine, session_maker
-from app.services import tempfiles
+from app.services import s3, tempfiles
+from app.services.pubsub import PubSub
 from app.settings import ENV, settings
 
 

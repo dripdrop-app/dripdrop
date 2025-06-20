@@ -4,8 +4,6 @@ from datetime import datetime, timedelta, timezone
 import dateutil.parser
 from sqlalchemy import and_, delete, false, select
 
-from app.clients import google
-from app.clients.pubsub import PubSub
 from app.db import (
     User,
     YoutubeChannel,
@@ -16,6 +14,8 @@ from app.db import (
     YoutubeVideoCategory,
 )
 from app.models.youtube import YoutubeChannelUpdateResponse
+from app.services import google
+from app.services.pubsub import PubSub
 from app.settings import settings
 from app.tasks.app import QueueTask, celery
 

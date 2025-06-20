@@ -5,9 +5,9 @@ import pytest
 from fastapi import UploadFile
 from sqlalchemy.exc import NoResultFound
 
-from app.clients import audiotags
-from app.clients.pubsub import PubSub
 from app.db import MusicJob, User
+from app.services import audiotags
+from app.services.pubsub import PubSub
 from app.tasks.music import run_music_job
 
 

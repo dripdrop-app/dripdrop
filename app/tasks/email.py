@@ -2,7 +2,7 @@ import asyncio
 import uuid
 from urllib.parse import urlencode, urlunsplit
 
-from app.clients.smtp2go import send_email
+from app.services.smtp2go import send_email
 from app.settings import ENV, settings
 from app.tasks.app import QueueTask, celery
 from app.templates import template_env

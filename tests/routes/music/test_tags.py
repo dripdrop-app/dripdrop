@@ -1,7 +1,7 @@
 import httpx
 from fastapi import status
 
-from app.clients import audiotags, s3
+from app.services import audiotags, s3
 
 URL = "/api/music/tags"
 

@@ -5,7 +5,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from pydantic import HttpUrl
 
-from app.clients import audiotags, google, imagedownloader, ytdlp
 from app.dependencies import get_authenticated_user
 from app.models.music import (
     GroupingResponse,
@@ -13,6 +12,7 @@ from app.models.music import (
     TagsResponse,
 )
 from app.routes.music.job import router as job_router
+from app.services import audiotags, google, imagedownloader, ytdlp
 from app.utils.youtube import parse_youtube_video_id
 
 logger = logging.getLogger(__name__)

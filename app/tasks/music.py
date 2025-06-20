@@ -7,11 +7,10 @@ import aiofiles.os
 import httpx
 from yt_dlp.utils import sanitize_filename
 
-from app.clients import audiotags, ffmpeg, imagedownloader, s3, ytdlp
-from app.clients.pubsub import PubSub
 from app.db import MusicJob
 from app.models.music import MusicJobUpdateResponse
-from app.services import tempfiles
+from app.services import audiotags, ffmpeg, imagedownloader, s3, tempfiles, ytdlp
+from app.services.pubsub import PubSub
 from app.settings import settings
 from app.tasks.app import QueueTask, celery
 
