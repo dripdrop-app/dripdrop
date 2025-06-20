@@ -151,7 +151,7 @@ async def send_reset_email(
     query = select(User).where(User.email == body.email)
     if user := await db_session.scalar(query):
         if user.verified:
-            background_tasks.add_task(send_password_reset_email, email=body.email)
+            background_tasks.add_task(send_password_reset_email.delay, email=body.email)
             return Response(None)
         raise HTTPException(
             detail="Account is not verified.", status_code=status.HTTP_400_BAD_REQUEST
