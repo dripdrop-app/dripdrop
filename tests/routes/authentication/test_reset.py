@@ -36,7 +36,7 @@ async def test_reset_with_nonexistent_email(client, faker, redis):
 
 async def test_reset(client, create_user, faker, db_session, redis):
     """
-    Test resetting a password for an account with a valid token. The endpoint should return a 200
+    Test resetting a password for an account with a valid token. The endpoint should return a 204
     response.
     """
 
