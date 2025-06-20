@@ -1,6 +1,10 @@
-.PHONY: makemigration
-makemigration:
-	infisical run --env=dev -- uv run alembic -c app/db/alembic.ini revision --auto-generate
+.PHONY: create-migration
+create-migration:
+	infisical run --env=dev -- uv run alembic -c app/db/alembic.ini revision --autogenerate
+
+.PHONY: migrate
+migrate:
+	infisical run --env=dev -- uv run alembic -c app/db/alembic.ini upgrade head
 
 .PHONY: install
 install:
