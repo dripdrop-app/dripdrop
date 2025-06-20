@@ -24,7 +24,7 @@ deploy-local:
 
 .PHONY: run-dev
 run-dev:
-	infisical run --env=dev -- uv run fastapi dev
+	infisical run --env=dev -- uv run fastapi dev app
 
 # Replace with celery command
 # .PHONY: worker-dev
