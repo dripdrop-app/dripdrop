@@ -19,11 +19,11 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Tags:
-    title: str | None
-    artist: str | None
-    album: str | None
-    grouping: str | None
-    artwork_url: str | None
+    title: str | None = None
+    artist: str | None = None
+    album: str | None = None
+    grouping: str | None = None
+    artwork_url: str | None = None
 
 
 class AudioTags:
