@@ -44,8 +44,12 @@ class MusicJob(Base):
     video_url: Mapped[str | None] = mapped_column(nullable=True)
     download_filename: Mapped[str | None] = mapped_column(nullable=True)
     download_url: Mapped[str | None] = mapped_column(nullable=True)
-    completed: Mapped[datetime] = mapped_column(nullable=True)
-    failed: Mapped[datetime] = mapped_column(nullable=True)
+    completed: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
+    failed: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
     deleted_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True
     )
