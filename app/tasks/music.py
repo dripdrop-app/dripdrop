@@ -9,7 +9,7 @@ from yt_dlp.utils import sanitize_filename
 
 from app.clients import audiotags, ffmpeg, imagedownloader, s3, ytdlp
 from app.clients.pubsub import PubSub
-from app.db.models.music import MusicJob
+from app.db import MusicJob
 from app.models.music import MusicJobUpdateResponse
 from app.services import tempfiles
 from app.settings import settings

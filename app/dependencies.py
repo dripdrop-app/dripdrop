@@ -5,8 +5,7 @@ from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import session_maker
-from app.db.models.user import User
+from app.db import User, session_maker
 from app.services.jwt import decode_jwt
 from app.settings import settings
 
