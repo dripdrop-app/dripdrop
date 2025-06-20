@@ -12,6 +12,7 @@ from app.models.music import (
     ResolvedArtworkResponse,
     TagsResponse,
 )
+from app.routes.music.job import router as job_router
 from app.utils.youtube import parse_youtube_video_id
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ router = APIRouter(
     dependencies=[Depends(get_authenticated_user)],
     responses={status.HTTP_401_UNAUTHORIZED: {}},
 )
+router.include_router(job_router)
 
 
 @router.get(
