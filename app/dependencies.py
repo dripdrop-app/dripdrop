@@ -31,16 +31,16 @@ RedisClient = Annotated[Redis, Depends(provide_redis)]
 
 async def get_user_from_token(token: str | None, db_session: AsyncSession):
     if token:
-        payload = decode_jwt(token)
-        if username := payload.get("sub"):
-            query = select(User).where(User.email == username)
+        payload = await decode_jwt(token)
+        if payload and (email := payload.sub):
+            query = select(User).where(User.email == email)
             user = await db_session.scalar(query)
             return user
     return None
 
 
 async def get_user_from_header(
-    db_session: DatabaseSession, authorization: Annotated[str | None, Header()]
+    db_session: DatabaseSession, authorization: Annotated[str | None, Header()] = None
 ):
     if authorization:
         token_parts = authorization.trim().split(" ")
@@ -55,7 +55,7 @@ HeaderUser = Annotated[User | None, Depends(get_user_from_header)]
 
 
 async def get_user_from_cookie(
-    db_session: DatabaseSession, token: Annotated[str | None, Cookie()]
+    db_session: DatabaseSession, token: Annotated[str | None, Cookie()] = None
 ):
     return await get_user_from_token(db_session=db_session, token=token)
 
