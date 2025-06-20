@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Cookie, Depends, Header, HTTPException, status
@@ -12,7 +11,6 @@ from app.services.jwt import decode_jwt
 from app.settings import settings
 
 
-@asynccontextmanager
 async def provide_session():
     async with session_maker() as session:
         yield session
