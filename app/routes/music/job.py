@@ -1,7 +1,17 @@
 import re
+from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Form,
+    HTTPException,
+    Path,
+    status,
+)
+from sqlalchemy import select
 
 from app.db import MusicFile, MusicJob
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
@@ -61,26 +71,25 @@ async def create_job(
     return None
 
 
-# @api.delete(
-#     "/{job_id}/delete",
-#     responses={status.HTTP_404_NOT_FOUND: {"description": ErrorMessages.JOB_NOT_FOUND}},
-# )
-# async def delete_job(
-#     user: AuthenticatedUser, session: DatabaseSession, job_id: str = Path(...)
-# ):
-#     query = select(MusicJob).where(
-#         MusicJob.id == job_id, MusicJob.user_email == user.email
-#     )
-#     music_job = await session.scalar(query)
-#     if not music_job:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND, detail=ErrorMessages.JOB_NOT_FOUND
-#         )
-#     await asyncio.to_thread(rq_client.stop_job, job_id=job_id)
-#     await music_job.cleanup()
-#     music_job.deleted_at = get_current_time()
-#     await session.commit()
-#     return Response(None)
+@router.delete(
+    "/{job_id}/delete",
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Job not found."}},
+)
+async def delete_job(
+    user: AuthUser,
+    db_session: DatabaseSession,
+    background_tasks: BackgroundTasks,
+    job_id: Annotated[str, Path()],
+):
+    query = select(MusicJob).where(
+        MusicJob.id == job_id, MusicJob.user_email == user.email
+    )
+    if music_job := await db_session.scalar(query):
+        music_job.deleted_at = datetime.now(timezone.utc)
+        await db_session.commit()
+        background_tasks.add_task(music_job.cleanup)
+        return None
+    raise HTTPException(detail="Job not found.", status_code=status.HTTP_404_NOT_FOUND)
 
 
 # @api.get("/{job_id}/download", responses={status.HTTP_404_NOT_FOUND: {}})
