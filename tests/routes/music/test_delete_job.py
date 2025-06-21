@@ -1,0 +1,79 @@
+import httpx
+from fastapi import UploadFile, status
+
+from app.db import MusicJob, User
+from app.services import audiotags
+from app.tasks.music import run_music_job
+
+URL = "/api/music/job/{job_id}/delete"
+
+
+async def test_delete_job_when_not_logged_in(client, faker):
+    """
+    Test delete job when not logged in. The endpoint should
+    return a 401 response.
+    """
+
+    response = await client.delete(URL.format(job_id=faker.uuid4()))
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+async def test_delete_job_with_non_existent_job(client, faker, create_and_login_user):
+    """
+    Test delete job for a job that doesn't exist. The endpoint
+    should return a 404 response.
+    """
+
+    await create_and_login_user()
+    response = await client.delete(URL.format(job_id=faker.uuid4()))
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+async def test_delete_job(client, create_and_login_user, create_music_job):
+    """
+    Test delete music job that does not have any uploaded files.
+    The endpoint should return a 200 response.
+    """
+
+    user: User = await create_and_login_user()
+    music_job: MusicJob = await create_music_job(email=user.email)
+    response = await client.delete(URL.format(job_id=music_job.id))
+    assert response.status_code == status.HTTP_200_OK
+
+
+async def test_delete_job_with_files(
+    client, create_and_login_user, create_music_job, db_session, test_audio, test_image
+):
+    """
+    Test delete music job that does has uploaded files.
+    The endpoint should return a 200 response and the files
+    should be deleted.
+    """
+
+    test_file = UploadFile(
+        filename="test.mp3", file=test_audio, headers={"content-type": "audio/mpeg"}
+    )
+
+    user: User = await create_and_login_user()
+    music_job: MusicJob = await create_music_job(
+        email=user.email,
+        file=test_file,
+        artwork_url=audiotags.AudioTags.get_image_as_base64(test_image),
+    )
+    await run_music_job(music_job_id=str(music_job.id))
+
+    await db_session.refresh(music_job)
+    assert music_job.filename_url is not None
+    assert music_job.artwork_url is not None
+    assert music_job.download_url is not None
+
+    response = await client.delete(URL.format(job_id=music_job.id))
+    assert response.status_code == status.HTTP_200_OK
+
+    async with httpx.AsyncClient() as http_client:
+        response = await http_client.get(music_job.filename_url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await http_client.get(music_job.artwork_url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await http_client.get(music_job.download_url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
