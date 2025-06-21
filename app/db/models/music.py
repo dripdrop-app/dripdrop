@@ -1,4 +1,5 @@
 import base64
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
@@ -9,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, get_session
 from app.db.models.user import User
-from app.services import imagedownloader, s3
+from app.services import audiotags, imagedownloader, s3
 from app.settings import settings
 
 
@@ -76,19 +77,29 @@ class MusicJob(Base):
 
     async def _upload_artwork_url(self, artwork_url: str):
         base64_data = None
-        if artwork_url.startswith(("/9j", "iVBORw0KGgo")):
-            base64_data = artwork_url
-        elif (parts := artwork_url.split("base64,")) and len(parts) == 2:
-            base64_data = parts[-1]
+        base64_extension = "None"
 
-        if base64_data:
-            extension = artwork_url.split(":")[0].split("/")[1]
-            data_string = ",".join(artwork_url.split(",")[1:])
-            data = base64.b64decode(data_string.encode())
-            filename = f"{settings.aws_s3_artwork_folder}/{self.id}/artwork.{extension}"
+        if artwork_url.startswith(tuple(audiotags.BASE64_IMAGE_TYPES.keys())):
+            base64_data = artwork_url
+            if mime_type := audiotags.AudioTags.get_base64_mime_type(
+                base64_string=base64_data
+            ):
+                base64_extension = mime_type.split("/")[-1]
+        elif matches := re.match(
+            "^data:(?P<extension>.+);base64,(?P<data>.+)", artwork_url
+        ):
+            groups = matches.groupdict()
+            base64_data = groups.get("data")
+            base64_extension = groups.get("extension")
+
+        if base64_data and base64_extension:
+            data = base64.b64decode(base64_data.encode())
+            filename = (
+                f"{settings.aws_s3_artwork_folder}/{self.id}/artwork.{base64_extension}"
+            )
             url = s3.resolve_url(filename=filename)
             await s3.upload_file(
-                filename=filename, body=data, content_type=f"image/{extension}"
+                filename=filename, body=data, content_type=f"image/{base64_extension}"
             )
             self.artwork_url = url
             self.artwork_filename = filename
