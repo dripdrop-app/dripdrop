@@ -16,6 +16,8 @@ from app.services import tempfiles
 
 logger = logging.getLogger(__name__)
 
+BASE64_IMAGE_TYPES = {"/9j": "image/jpg", "iVBORw0KGgo": "image/png"}
+
 
 @dataclass
 class Tags:
@@ -95,15 +97,19 @@ class AudioTags:
         self.tags.save()
 
     @classmethod
+    def get_base64_mime_type(cls, base64_string: str):
+        for base64_magic_number, image_type in BASE64_IMAGE_TYPES.items():
+            if base64_string.startswith(base64_magic_number):
+                return image_type
+        return None
+
+    @classmethod
     def get_image_as_base64(cls, image: bytes, mime_type: str | None = None):
         buffer = io.BytesIO(image)
         base64_string = base64.b64encode(buffer.getvalue()).decode()
         mime_type = mime_type
         if not mime_type:
-            if base64_string.startswith("/9j"):
-                mime_type = "image/jpg"
-            elif base64_string.startswith("iVBORw0KGgo"):
-                mime_type = "image/png"
+            mime_type = cls.get_base64_mime_type(base64_string=base64_string)
         return f"data:{mime_type};base64,{base64_string}"
 
     @classmethod
