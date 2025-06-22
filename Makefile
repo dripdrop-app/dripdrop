@@ -1,10 +1,12 @@
+CMD ?=
+
 .PHONY: create-migration
 create-migration:
-	infisical run --env=dev -- uv run alembic -c app/db/alembic.ini revision --autogenerate
+	uv run alembic -c app/db/alembic.ini revision --autogenerate
 
 .PHONY: migrate
 migrate:
-	infisical run --env=dev -- uv run alembic -c app/db/alembic.ini upgrade head
+	uv run alembic -c app/db/alembic.ini upgrade head
 
 .PHONY: install
 install:
@@ -12,28 +14,28 @@ install:
 
 .PHONY: lint
 lint:
-	ruff check --select I --fix
+	uv run ruff check --select I --fix
 
 .PHONY: test
 test:
-	ENV=testing infisical run --env=dev -- uv run pytest tests
+	ENV=testing uv run pytest tests
 
 .PHONY: coverage
 coverage:
-	ENV=testing infisical run --env=dev -- uv run pytest --cov=app tests
-
-.PHONY: deploy-local
-deploy-local:
-	docker compose --profile dev up -d 
+	ENV=testing uv run pytest --cov=app tests
 
 .PHONY: run-dev
 run-dev:
-	infisical run --env=dev -- uv run fastapi dev app
+	docker compose --profile dev up -d && uv run fastapi dev app
 
 # Replace with celery command
 # .PHONY: worker-dev
 # worker-dev:
 # 	infisical run --env=dev -- uv run litestar workers run --verbose --debug
+
+.PHONY: infisical
+infisical:
+	infisical run --env=dev -- make $(CMD)
 
 .PHONY: clean
 clean:
