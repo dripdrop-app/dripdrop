@@ -7,10 +7,18 @@ services:
     profiles:
       - prod
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
   postgres:
     container_name: postgres
     image: postgres:14
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DATABASE}"]
+      interval: 30s
     environment:
       POSTGRES_USER: dripdrop
       POSTGRES_PASSWORD: dripdrop
@@ -23,6 +31,9 @@ services:
     container_name: redis
     image: redis
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
     volumes:
       - type: volume
         source: redis_volume
