@@ -28,25 +28,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Run tests
-        run: docker compose --profile prod run server make coverage
-        env:
-          ASYNC_DATABASE_URL: "postgresql+asyncpg://dripdrop:dripdrop@localhost/dripdrop"
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
-          AWS_REGION_NAME: ${{ secrets.AWS_REGION_NAME }}
-          AWS_S3_ARTWORK_FOLDER: ${{ secrets.AWS_S3_ARTWORK_FOLDER }}
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          AWS_S3_MUSIC_FOLDER: ${{ secrets.AWS_S3_MUSIC_FOLDER }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          INVIDIOUS_API_URL: ${{ secrets.INVIDIOUS_API_URL }}
-          REDIS_URL: "redis://localhost:6379"
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          SMTP2GO_API_KEY: ${{ secrets.SMTP2GO_API_KEY }}
-          TEST_AWS_S3_BUCKET: ${{ secrets.TEST_AWS_S3_BUCKET }}
-          TEST_ASYNC_DATABASE_URL: "postgresql+asyncpg://dripdrop:dripdrop@localhost/dripdrop"
-          TEST_REDIS_URL: "redis://localhost:6379"
+        run: |
+          echo "ASYNC_DATABASE_URL=postgresql+asyncpg://dripdrop:dripdrop@localhost/dripdrop" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_ENDPOINT_URL=${{ secrets.AWS_ENDPOINT_URL }}" >> .env
+          echo "AWS_REGION_NAME=${{ secrets.AWS_REGION_NAME }}" >> .env
+          echo "AWS_S3_ARTWORK_FOLDER=${{ secrets.AWS_S3_ARTWORK_FOLDER }}" >> .env
+          echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> .env
+          echo "AWS_S3_MUSIC_FOLDER=${{ secrets.AWS_S3_MUSIC_FOLDER }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" >> .env
+          echo "INVIDIOUS_API_URL=${{ secrets.INVIDIOUS_API_URL }}" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+          echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >> .env
+          echo "SMTP2GO_API_KEY=${{ secrets.SMTP2GO_API_KEY }}" >> .env
+          echo "TEST_AWS_S3_BUCKET=${{ secrets.TEST_AWS_S3_BUCKET }}" >> .env
+          echo "TEST_ASYNC_DATABASE_URL=postgresql+asyncpg://dripdrop:dripdrop@localhost/dripdrop" >> .env
+          echo "TEST_REDIS_URL=redis://localhost:6379"
+          docker compose --profile prod --env-file .env run --rm server make coverage
   deploy:
     if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-latest
