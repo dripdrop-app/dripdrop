@@ -1,5 +1,7 @@
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm
 
+RUN apt update && apt install -y ffmpeg 
+
 WORKDIR /app
 
 COPY ./uv.lock ./uv.lock
