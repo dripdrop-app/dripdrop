@@ -28,7 +28,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Run tests
-        run: docker compose --profile prod run bash -c "make coverage"
+        run: docker compose --profile prod run server make coverage
         env:
           ASYNC_DATABASE_URL: "postgresql+asyncpg://dripdrop:dripdrop@localhost/dripdrop"
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
