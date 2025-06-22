@@ -45,7 +45,7 @@ jobs:
           echo "SMTP2GO_API_KEY=${{ secrets.SMTP2GO_API_KEY }}" >> .env
           echo "TEST_AWS_S3_BUCKET=${{ secrets.TEST_AWS_S3_BUCKET }}" >> .env
           echo "TEST_ASYNC_DATABASE_URL=postgresql+asyncpg://dripdrop:dripdrop@localhost/dripdrop" >> .env
-          echo "TEST_REDIS_URL=redis://localhost:6379"
+          echo "TEST_REDIS_URL=redis://localhost:6379" >> .env
           docker compose --profile prod --env-file .env run --rm server make coverage
   deploy:
     if: ${{ github.ref_name == 'main' }}
