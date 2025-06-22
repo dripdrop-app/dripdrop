@@ -85,10 +85,10 @@ class MusicJob(Base):
                 base64_string=base64_data
             ):
                 base64_extension = mime_type.split("/")[-1]
-        elif matches := re.match(
-            "^data:(?P<extension>.+);base64,(?P<data>.+)", artwork_url
+        elif match := re.match(
+            "data:(?P<extension>.+);base64,(?P<data>.+)", artwork_url
         ):
-            groups = matches.groupdict()
+            groups = match.groupdict()
             base64_data = groups.get("data")
             base64_extension = groups.get("extension")
 
