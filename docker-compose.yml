@@ -5,16 +5,12 @@ services:
       context: .
       dockerfile: Dockerfile
     profiles:
-      - test
       - prod
     restart: unless-stopped
-  postgres: &postgres
+  postgres:
     container_name: postgres
     image: postgres:14
     restart: unless-stopped
-    profiles:
-      - test
-      - prod
     environment:
       POSTGRES_USER: dripdrop
       POSTGRES_PASSWORD: dripdrop
@@ -23,47 +19,15 @@ services:
       - type: volume
         source: postgres_volume
         target: /var/lib/postgresql/data
-
-  postgres_dev:
-    <<: *postgres
-    profiles:
-      - dev
-    volumes:
-      - type: volume
-        source: postgres_test_volume
-        target: /var/lib/postgresql/data
-    ports:
-      - target: 5432
-        published: 5432
-        protocol: tcp
-        mode: host
-  redis: &redis
+  redis:
     container_name: redis
     image: redis
     restart: unless-stopped
-    profiles:
-      - test
-      - prod
     volumes:
       - type: volume
         source: redis_volume
         target: /data
-  redis_dev:
-    <<: *redis
-    profiles:
-      - dev
-    volumes:
-      - type: volume
-        source: redis_test_volume
-        target: /data
-    ports:
-      - target: 6379
-        published: 6379
-        protocol: tcp
-        mode: host
 
 volumes:
   postgres_volume: {}
-  postgres_test_volume: {}
   redis_volume: {}
-  redis_test_volume: {}
