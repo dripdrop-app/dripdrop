@@ -17,7 +17,7 @@ services:
     image: postgres:14
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_DB}"]
+      test: ["CMD", "pg_isready", "-U", "$$POSTGRES_DB"]
       interval: 30s
     environment:
       POSTGRES_USER: dripdrop
