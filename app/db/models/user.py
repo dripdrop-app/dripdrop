@@ -42,10 +42,7 @@ class User(Base):
     )
 
     def set_password(self, new_password: str):
-        self.password = str(
-            bcrypt.hashpw(bytes(new_password, encoding="utf-8"), bcrypt.gensalt()),
-            encoding="utf-8",
-        )
+        self.password = self.hash_password(new_password)
 
     def check_password(self, password: str):
         return bcrypt.checkpw(
@@ -53,13 +50,15 @@ class User(Base):
             bytes(self.password, encoding="utf-8"),
         )
 
-
-@event.listens_for(User, "init")
-def init_user(target, args, kwargs):
-    if "password" in kwargs:
-        kwargs["password"] = str(
-            bcrypt.hashpw(
-                bytes(kwargs["password"], encoding="utf-8"), bcrypt.gensalt()
-            ),
+    @classmethod
+    def hash_password(cls, password: str):
+        return str(
+            bcrypt.hashpw(bytes(password, encoding="utf-8"), bcrypt.gensalt()),
             encoding="utf-8",
         )
+
+
+@event.listens_for(User, "init")
+def init_user(target: User, args, kwargs):
+    if "password" in kwargs:
+        kwargs["password"] = target.hash_password(kwargs["password"])
