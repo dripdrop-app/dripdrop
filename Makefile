@@ -22,7 +22,7 @@ test:
 
 .PHONY: coverage
 coverage:
-	ENV=testing uv run pytest --cov=app tests
+	ENV=testing uv run pytest --cov=app --cov-report=term-missing tests
 
 .PHONY: run-dev
 run-dev:
