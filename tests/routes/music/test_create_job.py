@@ -44,6 +44,26 @@ async def test_create_job_with_file_and_video_url(
     }
 
 
+async def test_create_job_without_file_and_video_url(client, create_and_login_user):
+    """
+    Test creating a music job when logged in with a file and video_url. The
+    endpoint should return a 422 status.
+    """
+
+    await create_and_login_user()
+    response = await client.post(
+        URL,
+        data={
+            "title": "title",
+            "artist": "artist",
+            "album": "album",
+            "grouping": "grouping",
+        },
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.json() == {"detail": "'file' or 'video_url' must be defined."}
+
+
 async def test_create_job_with_invalid_content_type_file(client, create_and_login_user):
     """
     Test creating a music job when logged in but with invalid content type.
