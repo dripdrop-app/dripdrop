@@ -47,7 +47,10 @@ async def check_session(user: AuthUser):
 @router.post(
     "/login",
     response_model=AuthenticatedResponse,
-    responses={status.HTTP_401_UNAUTHORIZED: {}, status.HTTP_404_NOT_FOUND: {}},
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {},
+        status.HTTP_404_NOT_FOUND: {"description": "User not found."},
+    },
 )
 async def login(db_session: DatabaseSession, body: Annotated[LoginUser, Body()]):
     query = select(User).where(User.email == body.email)
@@ -70,7 +73,7 @@ async def login(db_session: DatabaseSession, body: Annotated[LoginUser, Body()])
         raise HTTPException(
             detail="Account is unverified.", status_code=status.HTTP_401_UNAUTHORIZED
         )
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    raise HTTPException(detail="User not found.", status_code=status.HTTP_404_NOT_FOUND)
 
 
 @router.get(
