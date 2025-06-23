@@ -16,6 +16,7 @@ async def test_login_with_non_existent_user(client, faker):
         json={"email": faker.email(), "password": faker.password()},
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json() == {"detail": "User not found."}
 
 
 async def test_login_with_incorrect_password(client, faker, create_user):
@@ -29,6 +30,7 @@ async def test_login_with_incorrect_password(client, faker, create_user):
         URL, json={"email": user.email, "password": faker.password()}
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == {"detail": "Incorrect password."}
 
 
 async def test_login_with_unverified_user(client, faker, create_user):
@@ -41,6 +43,7 @@ async def test_login_with_unverified_user(client, faker, create_user):
     user: User = await create_user(password=password, verified=False)
     response = await client.post(URL, json={"email": user.email, "password": password})
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == {"detail": "Account is unverified."}
 
 
 async def test_login_with_correct_credentials(client, faker, create_user):
