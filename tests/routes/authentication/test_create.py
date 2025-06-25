@@ -24,7 +24,7 @@ async def test_create_when_user_exists(client, faker, create_user):
 
 async def test_create(client, faker, db_session, monkeypatch):
     """
-    Test creating an account. The endpoint should return a 200
+    Test creating an account. The endpoint should return a 204
     response and the user should not be verified.
     """
 
@@ -34,7 +34,7 @@ async def test_create(client, faker, db_session, monkeypatch):
     email = faker.email()
     password = faker.password()
     response = await client.post(URL, json={"email": email, "password": password})
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
     query = select(User).where(User.email == email)
     user = await db_session.scalar(query)

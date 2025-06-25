@@ -32,8 +32,8 @@ async def test_send_reset_with_unverified_user(client, create_user):
 
 async def test_send_reset(client, create_user, monkeypatch):
     """
-    Test sending a password reset email to a user. The endpoint should return a 200 response and the
-    email should be sent out.
+    Test sending a password reset email to a user. The endpoint should return a 204
+    response and the email should be sent out.
     """
 
     mock_task = MagicMock()
@@ -41,7 +41,7 @@ async def test_send_reset(client, create_user, monkeypatch):
 
     user: User = await create_user()
     response = await client.post(URL, json={"email": user.email})
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
     mock_task.assert_called_once()
     kwargs = mock_task.call_args.kwargs

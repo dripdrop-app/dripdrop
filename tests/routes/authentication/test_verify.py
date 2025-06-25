@@ -32,7 +32,7 @@ async def test_verify_with_nonexistent_email(client, faker, redis):
 
 async def test_verify(client, create_user, faker, db_session, redis):
     """
-    Test verifying an account with a valid token. The endpoint should return a 200
+    Test verifying an account with a valid token. The endpoint should return a 204
     response.
     """
 
@@ -41,7 +41,7 @@ async def test_verify(client, create_user, faker, db_session, redis):
     await redis.set(f"verify:{token}", user.email)
 
     response = await client.get(URL, params={"token": token})
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
     await db_session.refresh(user)
     assert user.verified is True

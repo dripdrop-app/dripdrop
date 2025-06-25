@@ -112,7 +112,7 @@ async def create_account(
     background_tasks.add_task(
         send_verification_email.delay, email=body.email, base_url=str(request.base_url)
     )
-    return Response(None)
+    return None
 
 
 @router.get(
@@ -132,7 +132,7 @@ async def verify_email(
             user.verified = True
             await db_session.commit()
             await redis.delete(f"verify:{token}")
-            return Response(None)
+            return None
         raise HTTPException(
             detail="Account does not exist.", status_code=status.HTTP_400_BAD_REQUEST
         )
@@ -155,7 +155,7 @@ async def send_reset_email(
     if user := await db_session.scalar(query):
         if user.verified:
             background_tasks.add_task(send_password_reset_email.delay, email=body.email)
-            return Response(None)
+            return None
         raise HTTPException(
             detail="Account is not verified.", status_code=status.HTTP_400_BAD_REQUEST
         )
