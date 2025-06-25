@@ -36,6 +36,7 @@ async def test_run_music_job_with_non_existent_file(create_user, create_music_jo
         await run_music_job(music_job_id=str(music_job.id))
 
 
+@pytest.mark.long
 async def test_run_music_job_messages(
     create_user,
     create_music_job,
@@ -71,6 +72,7 @@ async def test_run_music_job_messages(
     }
 
 
+@pytest.mark.long
 async def test_run_music_job_with_audio_url(
     create_user,
     create_music_job,
@@ -117,6 +119,7 @@ async def test_run_music_job_with_audio_url(
         assert tags.grouping == expected_grouping
 
 
+@pytest.mark.long
 async def test_run_music_job_with_file(
     create_user,
     create_music_job,
@@ -165,6 +168,7 @@ async def test_run_music_job_with_file(
         assert tags.grouping == expected_grouping
 
 
+@pytest.mark.long
 async def test_run_music_job_with_external_artwork(
     create_user,
     create_music_job,

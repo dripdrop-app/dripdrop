@@ -1,4 +1,5 @@
 import httpx
+import pytest
 from fastapi import UploadFile, status
 
 from app.db import MusicJob, User
@@ -41,6 +42,7 @@ async def test_delete_job(client, create_and_login_user, create_music_job):
     assert response.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.long
 async def test_delete_job_with_files(
     client, create_and_login_user, create_music_job, db_session, test_audio, test_image
 ):

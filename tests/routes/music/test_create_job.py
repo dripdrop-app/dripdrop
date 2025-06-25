@@ -1,3 +1,4 @@
+import pytest
 from fastapi import status
 from sqlalchemy import select
 
@@ -85,6 +86,7 @@ async def test_create_job_with_invalid_content_type_file(client, create_and_logi
     assert response.json() == {"detail": "File is incorrect format."}
 
 
+@pytest.mark.long
 async def test_create_job_with_file(
     client, create_and_login_user, test_audio, db_session
 ):
