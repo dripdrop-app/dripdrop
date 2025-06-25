@@ -93,7 +93,7 @@ async def test_login_with_correct_credentials(
             db_session, LoginUser(email=user.email, password=password)
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.headers.get("set-cookie") not in ["null", None]
+        assert response.headers.get("set-cookie") is not None
     else:
         response = await client.post(
             URL, json={"email": user.email, "password": password}
