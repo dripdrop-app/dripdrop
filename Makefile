@@ -24,10 +24,6 @@ test:
 test-fast:
 	ENV=testing uv run pytest tests -m "not long"
 
-.PHONY: coverage
-coverage:
-	ENV=testing uv run pytest --cov=app --cov-report=term-missing tests
-
 .PHONY: run-dev
 run-dev:
 	docker compose --profile dev up -d && uv run fastapi dev app
