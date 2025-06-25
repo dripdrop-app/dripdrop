@@ -20,6 +20,10 @@ lint:
 test:
 	ENV=testing uv run pytest tests
 
+.PHONY: test-fast
+test-fast:
+	ENV=testing uv run pytest tests -m "not long"
+
 .PHONY: coverage
 coverage:
 	ENV=testing uv run pytest --cov=app --cov-report=term-missing tests
