@@ -2,6 +2,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import status
+from fastapi.requests import Request
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +19,11 @@ async def client():
         transport=httpx.ASGITransport(app=app), base_url="http://testserver"
     ) as client:
         yield client
+
+
+@pytest.fixture(scope="function")
+async def mock_request():
+    return Request({"type": "http", "headers": [("base_url", "http://testserver")]})
 
 
 @pytest.fixture(scope="function", autouse=True)
