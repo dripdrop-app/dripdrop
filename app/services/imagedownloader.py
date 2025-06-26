@@ -43,7 +43,9 @@ def _get_images(response: httpx.Response) -> list:
 
 
 async def resolve_artwork(artwork: str):
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(
+        transport=httpx.AsyncHTTPTransport(retries=3)
+    ) as client:
         response = await client.get(artwork, headers={"User-Agent": user_agent.firefox})
         if response.is_success:
             if is_image_link(response=response):
