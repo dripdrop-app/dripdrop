@@ -1,3 +1,5 @@
+import pytest
+import yt_dlp.utils
 from fastapi import status
 
 URL = "/api/music/grouping"
@@ -26,6 +28,7 @@ async def test_grouping_with_invalid_video_url(client, faker, create_and_login_u
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+@pytest.mark.xfail(raises=yt_dlp.utils.DownloadError)
 async def test_grouping_with_valid_video_url(client, create_and_login_user):
     """
     Test retrieving the grouping for a valid youtube video. The endpoint

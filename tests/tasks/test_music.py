@@ -2,6 +2,7 @@ import json
 
 import httpx
 import pytest
+import yt_dlp.utils
 from fastapi import UploadFile
 from sqlalchemy.exc import NoResultFound
 
@@ -37,6 +38,7 @@ async def test_run_music_job_with_non_existent_file(create_user, create_music_jo
 
 
 @pytest.mark.long
+@pytest.mark.xfail(raises=yt_dlp.utils.DownloadError)
 async def test_run_music_job_messages(
     create_user,
     create_music_job,
