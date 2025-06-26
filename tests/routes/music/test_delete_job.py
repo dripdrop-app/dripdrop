@@ -85,6 +85,8 @@ async def test_delete_job_with_files(
 
     response = await client.delete(URL.format(job_id=music_job.id))
     assert response.status_code == status.HTTP_200_OK
+
+    await db_session.refresh(music_job)
     assert music_job.deleted_at is not None
 
     async with httpx.AsyncClient() as http_client:
