@@ -1,4 +1,5 @@
 import re
+from unittest.mock import MagicMock
 
 from fastapi import status
 
@@ -17,7 +18,7 @@ async def test_artwork_when_not_logged_in(client):
 
 async def test_artwork_with_invalid_url(client, faker, create_and_login_user):
     """
-    Test resolving artwork url logged in but with an invalid url. The endpoint should
+    Test resolving artwork with an invalid url. The endpoint should
     return a 422 error.
     """
 
@@ -26,11 +27,31 @@ async def test_artwork_with_invalid_url(client, faker, create_and_login_user):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+async def test_artwork_with_valid_image_url_but_failed_retrieval(
+    client, create_and_login_user, test_image_url, monkeypatch
+):
+    """
+    Testing resolving an artwork url given a valid image url but failed
+    to retrieve the image. The endpoint should respond with a 400 response.
+    """
+
+    mock_resolve_artwork = MagicMock()
+    mock_resolve_artwork.return_value = None
+    monkeypatch.setattr(
+        "app.services.imagedownloader.resolve_artwork", mock_resolve_artwork
+    )
+
+    await create_and_login_user()
+    response = await client.get(URL, params={"artwork_url": test_image_url})
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "Unable to get artwork."}
+
+
 async def test_artwork_with_valid_image_url(
     client, create_and_login_user, test_image_url
 ):
     """
-    Testing resolving an artwork url when logged in and given a valid image url. The
+    Testing resolving an artwork url given a valid image url. The
     endpoint should respond with a 200 response and the same image url.
     """
 
@@ -42,7 +63,7 @@ async def test_artwork_with_valid_image_url(
 
 async def test_artwork_with_valid_soundcloud_url(client, create_and_login_user):
     """
-    Test resolving an artwork url when logged in and given a soundcloud url. The endpoint
+    Test resolving an artwork url given a soundcloud url. The endpoint
     should return a 200 status with the artwork url of the given song.
     """
 
