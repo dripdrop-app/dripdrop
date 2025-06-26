@@ -1,5 +1,5 @@
-import pytest
-import yt_dlp.utils
+from unittest.mock import MagicMock
+
 from fastapi import status
 
 URL = "/api/music/grouping"
@@ -28,8 +28,30 @@ async def test_grouping_with_invalid_video_url(client, faker, create_and_login_u
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-@pytest.mark.xfail(raises=yt_dlp.utils.DownloadError)
-async def test_grouping_with_valid_video_url(client, create_and_login_user):
+async def test_grouping_with_failed_to_retrieve(
+    client, create_and_login_user, monkeypatch
+):
+    """
+    Test retrieving the grouping for a valid youtube video but with a
+    failed response. The endpoint should return a 400 response.
+    """
+
+    mock_get_video_uploader = MagicMock()
+    mock_get_video_uploader.return_value = None
+    monkeypatch.setattr(
+        "app.services.google.get_video_uploader", mock_get_video_uploader
+    )
+
+    await create_and_login_user()
+    response = await client.get(
+        URL,
+        params={"video_url": "https://www.youtube.com/watch?v=FCrJNvJ-NIU"},
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "Unable to get grouping."}
+
+
+async def test_grouping_with_youtube_video_url(client, create_and_login_user):
     """
     Test retrieving the grouping for a valid youtube video. The endpoint
     should return a successful response.
@@ -42,3 +64,18 @@ async def test_grouping_with_valid_video_url(client, create_and_login_user):
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"grouping": "Food Dip"}
+
+
+async def test_grouping_with_video_url(client, create_and_login_user):
+    """
+    Test retrieving the grouping for a valid video supported by yt-dlp.
+    The endpoint should return a successful response.
+    """
+
+    await create_and_login_user()
+    response = await client.get(
+        URL,
+        params={"video_url": "https://vimeo.com/876518552"},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {"grouping": "McGloughlin Brothers"}
