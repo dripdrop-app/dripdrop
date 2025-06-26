@@ -233,7 +233,9 @@ async def get_video_categories():
 
 async def get_video_uploader(video_id: str):
     url = "https://www.youtube.com/watch?v=" + video_id
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(
+        transport=httpx.AsyncHTTPTransport(retries=3)
+    ) as client:
         response = await client.get(url=url)
         if response.is_error:
             return None
