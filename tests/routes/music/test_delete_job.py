@@ -1,8 +1,9 @@
 import httpx
 import pytest
-from fastapi import UploadFile, status
+from fastapi import BackgroundTasks, UploadFile, status
 
 from app.db import MusicJob, User
+from app.routes.music.job import delete_job
 from app.services import audiotags
 from app.tasks.music import run_music_job
 
@@ -30,7 +31,10 @@ async def test_delete_job_with_non_existent_job(client, faker, create_and_login_
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-async def test_delete_job(client, create_and_login_user, create_music_job):
+@pytest.mark.parametrize("use_function", [True, False])
+async def test_delete_job(
+    client, create_and_login_user, create_music_job, use_function, db_session
+):
     """
     Test delete music job that does not have any uploaded files.
     The endpoint should return a 200 response.
@@ -38,8 +42,18 @@ async def test_delete_job(client, create_and_login_user, create_music_job):
 
     user: User = await create_and_login_user()
     music_job: MusicJob = await create_music_job(email=user.email)
-    response = await client.delete(URL.format(job_id=music_job.id))
-    assert response.status_code == status.HTTP_200_OK
+
+    if use_function:
+        background_tasks = BackgroundTasks()
+        await delete_job(user, db_session, background_tasks, str(music_job.id))
+        assert len(background_tasks.tasks) == 1
+        assert background_tasks.tasks[0].func.__name__ == MusicJob.cleanup.__name__
+    else:
+        response = await client.delete(URL.format(job_id=music_job.id))
+        assert response.status_code == status.HTTP_200_OK
+
+    await db_session.refresh(music_job)
+    assert music_job.deleted_at is not None
 
 
 @pytest.mark.long
@@ -71,6 +85,7 @@ async def test_delete_job_with_files(
 
     response = await client.delete(URL.format(job_id=music_job.id))
     assert response.status_code == status.HTTP_200_OK
+    assert music_job.deleted_at is not None
 
     async with httpx.AsyncClient() as http_client:
         response = await http_client.get(music_job.filename_url)
