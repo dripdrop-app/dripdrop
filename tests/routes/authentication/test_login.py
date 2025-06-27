@@ -1,6 +1,5 @@
 import pytest
-from fastapi import status
-from fastapi.exceptions import HTTPException
+from fastapi import HTTPException, status
 
 from app.db import User
 from app.routes.authentication import LoginUser, login

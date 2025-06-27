@@ -1,8 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi import BackgroundTasks, status
-from fastapi.exceptions import HTTPException
+from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy import select
 
 from app.db import User
