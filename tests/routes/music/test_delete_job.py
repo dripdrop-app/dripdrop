@@ -4,8 +4,8 @@ from fastapi import BackgroundTasks, HTTPException, UploadFile, status
 
 from app.db import MusicJob, User
 from app.routes.music.job import delete_job
-from app.services import audiotags
-from app.tasks.music import run_music_job
+from app.services import audiotags, s3
+from app.settings import settings
 
 URL = "/api/music/job/{job_id}/delete"
 
@@ -90,7 +90,6 @@ async def test_delete_job(
     assert music_job.deleted_at is not None
 
 
-@pytest.mark.long
 async def test_delete_job_with_files(
     client, create_and_login_user, create_music_job, db_session, test_audio, test_image
 ):
@@ -110,12 +109,19 @@ async def test_delete_job_with_files(
         file=test_file,
         artwork_url=audiotags.AudioTags.get_image_as_base64(test_image),
     )
-    await run_music_job(music_job_id=str(music_job.id))
 
-    await db_session.refresh(music_job)
+    filename = f"{settings.aws_s3_music_folder}/{music_job.id}/test.mp3"
+    await s3.upload_file(
+        filename=filename,
+        body=test_audio,
+        content_type="audio/mpeg",
+    )
+    music_job.download_filename = filename
+    music_job.download_url = s3.resolve_url(filename=filename)
+    await db_session.commit()
+
     assert music_job.filename_url is not None
     assert music_job.artwork_url is not None
-    assert music_job.download_url is not None
 
     response = await client.delete(URL.format(job_id=music_job.id))
     assert response.status_code == status.HTTP_200_OK
