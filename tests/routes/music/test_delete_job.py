@@ -1,6 +1,6 @@
 import httpx
 import pytest
-from fastapi import BackgroundTasks, UploadFile, status
+from fastapi import BackgroundTasks, HTTPException, UploadFile, status
 
 from app.db import MusicJob, User
 from app.routes.music.job import delete_job
@@ -20,15 +20,23 @@ async def test_delete_job_when_not_logged_in(client, faker):
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-async def test_delete_job_with_non_existent_job(client, faker, create_and_login_user):
+@pytest.mark.parametrize("use_function", [True, False])
+async def test_delete_job_with_non_existent_job(
+    client, faker, create_and_login_user, use_function, db_session
+):
     """
     Test delete job for a job that doesn't exist. The endpoint
     should return a 404 response.
     """
 
-    await create_and_login_user()
-    response = await client.delete(URL.format(job_id=faker.uuid4()))
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+    user: User = await create_and_login_user()
+
+    if use_function:
+        with pytest.raises(HTTPException):
+            await delete_job(user, db_session, BackgroundTasks(), faker.uuid4())
+    else:
+        response = await client.delete(URL.format(job_id=faker.uuid4()))
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.parametrize("use_function", [True, False])
