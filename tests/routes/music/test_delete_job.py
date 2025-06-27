@@ -40,6 +40,32 @@ async def test_delete_job_with_non_existent_job(
 
 
 @pytest.mark.parametrize("use_function", [True, False])
+async def test_delete_job_that_belongs_to_another_user(
+    client,
+    create_user,
+    create_and_login_user,
+    create_music_job,
+    use_function,
+    db_session,
+):
+    """
+    Test deleting a job that belongs to another user. The endpoint
+    should return a 404 response.
+    """
+
+    user: User = await create_and_login_user()
+    other_user: User = await create_user()
+    music_job: MusicJob = await create_music_job(email=other_user.email)
+
+    if use_function:
+        with pytest.raises(HTTPException):
+            await delete_job(user, db_session, BackgroundTasks(), str(music_job.id))
+    else:
+        response = await client.delete(URL.format(job_id=str(music_job.id)))
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.parametrize("use_function", [True, False])
 async def test_delete_job(
     client, create_and_login_user, create_music_job, use_function, db_session
 ):
