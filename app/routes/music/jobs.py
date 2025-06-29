@@ -1,75 +1,171 @@
-import math
+import pathlib
+import re
+from datetime import datetime, timezone
+from typing import Annotated
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Path, WebSocket, status
-from sqlalchemy import func, select
-
-from app.authentication.dependencies import (
-    AuthenticatedUser,
-    get_authenticated_user,
+import httpx
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Form,
+    HTTPException,
+    Path,
+    status,
 )
-from app.base.dependencies import DatabaseSession
-from app.music.models import MusicJob
-from app.music.responses import (
-    ErrorMessages,
-    MusicJobsResponse,
-    MusicJobUpdateResponse,
-)
-from app.services import database
-from app.services.websocket_channel import RedisChannels, WebsocketChannel
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select
 
-api = APIRouter(
+from app.db import MusicFile, MusicJob
+from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
+from app.models.music import CreateMusicJob
+from app.tasks.music import run_music_job
+
+router = APIRouter(
     prefix="/jobs",
     tags=["Music Jobs"],
     dependencies=[Depends(get_authenticated_user)],
 )
 
 
-@api.get(
-    "/{page}/{per_page}",
-    response_model=MusicJobsResponse,
-    responses={
-        status.HTTP_404_NOT_FOUND: {"description": ErrorMessages.PAGE_NOT_FOUND}
-    },
-)
-async def get_jobs(
-    user: AuthenticatedUser,
+@router.post("/create", status_code=status.HTTP_201_CREATED)
+async def create_job(
+    user: AuthUser,
     session: DatabaseSession,
-    page: int = Path(..., ge=1),
-    per_page: int = Path(..., le=50, gt=0),
+    background_tasks: BackgroundTasks,
+    form: Annotated[CreateMusicJob, Form()],
 ):
-    query = (
-        select(MusicJob)
-        .where(MusicJob.user_email == user.email, MusicJob.deleted_at.is_(None))
-        .order_by(MusicJob.created_at.desc())
-    )
-    jobs_query = query.offset((page - 1) * per_page).limit(per_page)
-    results = await session.scalars(jobs_query)
-    music_jobs = results.all()
-    count_query = select(func.count(query.subquery().columns.id))
-    count = await session.scalar(count_query)
-    total_pages = math.ceil(count / per_page)
-    if page > total_pages and page != 1:
+    if form.file and form.video_url:
         raise HTTPException(
-            detail=ErrorMessages.PAGE_NOT_FOUND, status_code=status.HTTP_404_NOT_FOUND
+            detail="'file' and 'video_url' cannot both be defined.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
-    return MusicJobsResponse(music_jobs=music_jobs, total_pages=total_pages)
-
-
-@api.websocket("/listen")
-async def listen_jobs(user: AuthenticatedUser, websocket: WebSocket):
-    async def handler(msg):
-        message = MusicJobUpdateResponse.model_validate(msg)
-        job_id = message.id
-        async with database.create_session() as session:
-            query = select(MusicJob).where(
-                MusicJob.user_email == user.email,
-                MusicJob.id == job_id,
-                MusicJob.deleted_at.is_(None),
+    elif form.file is None and form.video_url is None:
+        raise HTTPException(
+            detail="'file' or 'video_url' must be defined.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+    if form.file:
+        if not re.match("^audio/", form.file.content_type):
+            raise HTTPException(
+                detail="File is incorrect format.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             )
-            music_job = await session.scalar(query)
-            if music_job:
-                await websocket.send_json(message.model_dump())
-
-    await WebsocketChannel(channel=RedisChannels.MUSIC_JOB_UPDATE).listen(
-        websocket=websocket, handler=handler
+    music_job = MusicJob(
+        user_email=user.email,
+        video_url=form.video_url.unicode_string() if form.video_url else None,
+        title=form.title,
+        artist=form.artist,
+        album=form.album,
+        grouping=form.grouping,
     )
+    session.add(music_job)
+    await session.commit()
+    background_tasks.add_task(
+        music_job.upload_files,
+        MusicFile(
+            file=await form.file.read(),
+            filename=form.file.filename,
+            content_type=form.file.content_type,
+        ),
+        form.artwork_url,
+    )
+    background_tasks.add_task(run_music_job.delay, music_job_id=str(music_job.id))
+    return None
+
+
+@router.delete(
+    "/{job_id}/delete",
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Job not found."}},
+)
+async def delete_job(
+    user: AuthUser,
+    db_session: DatabaseSession,
+    background_tasks: BackgroundTasks,
+    job_id: Annotated[str, Path()],
+):
+    query = select(MusicJob).where(
+        MusicJob.id == job_id, MusicJob.user_email == user.email
+    )
+    if music_job := await db_session.scalar(query):
+        music_job.deleted_at = datetime.now(timezone.utc)
+        await db_session.commit()
+        background_tasks.add_task(music_job.cleanup)
+        return None
+    raise HTTPException(detail="Job not found.", status_code=status.HTTP_404_NOT_FOUND)
+
+
+@router.get("/{job_id}/download", responses={status.HTTP_404_NOT_FOUND: {}})
+async def download_job(
+    user: AuthUser,
+    db_session: DatabaseSession,
+    job_id: Annotated[str, Path()],
+):
+    query = select(MusicJob).where(
+        MusicJob.id == job_id, MusicJob.user_email == user.email
+    )
+    if music_job := await db_session.scalar(query):
+        if music_job.download_url:
+            filename = pathlib.Path(music_job.download_filename).name
+            async with httpx.AsyncClient() as client:
+                response = await client.get(music_job.download_url)
+                return StreamingResponse(
+                    content=response.aiter_bytes(chunk_size=500),
+                    media_type=response.headers.get("content-type"),
+                    headers={
+                        "Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"
+                    },
+                )
+        raise HTTPException(
+            detail="Download not found.", status_code=status.HTTP_404_NOT_FOUND
+        )
+    raise HTTPException(detail="Job not found.", status_code=status.HTTP_404_NOT_FOUND)
+
+
+# @router.get(
+#     "/list",
+#     response_model=MusicJobListResponse,
+#     responses={status.HTTP_404_NOT_FOUND: {"description": "Page not found."}},
+# )
+# async def get_jobs(
+#     user: AuthUser,
+#     db_session: DatabaseSession,
+#     page: Annotated[int, Query(..., ge=1)],
+#     per_page: Annotated[int, Query(..., le=50, gt=0)],
+# ):
+#     query = (
+#         select(MusicJob)
+#         .where(MusicJob.user_email == user.email, MusicJob.deleted_at.is_(None))
+#         .order_by(MusicJob.created_at.desc())
+#     )
+#     paginated_results = await query_with_pagination(
+#         db_session=db_session, query=query, page=page, per_page=per_page
+#     )
+#     if page > paginated_results.total_pages:
+#         raise HTTPException(
+#             detail="Page not found.", status_code=status.HTTP_404_NOT_FOUND
+#         )
+#     return MusicJobListResponse(
+#         music_jobs=paginated_results.results, total_pages=paginated_results.total_pages
+#     )
+
+
+# @api.websocket("/listen")
+# async def listen_jobs(user: AuthenticatedUser, websocket: WebSocket):
+#     async def handler(msg):
+#         message = MusicJobUpdateResponse.model_validate(msg)
+#         job_id = message.id
+#         async with database.create_session() as session:
+#             query = select(MusicJob).where(
+#                 MusicJob.user_email == user.email,
+#                 MusicJob.id == job_id,
+#                 MusicJob.deleted_at.is_(None),
+#             )
+#             music_job = await session.scalar(query)
+#             if music_job:
+#                 await websocket.send_json(message.model_dump())
+
+#     await WebsocketChannel(channel=RedisChannels.MUSIC_JOB_UPDATE).listen(
+#         websocket=websocket, handler=handler
+#     )

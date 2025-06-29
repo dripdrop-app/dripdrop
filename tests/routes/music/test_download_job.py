@@ -2,9 +2,9 @@ import pytest
 from fastapi import HTTPException, status
 
 from app.db import MusicJob, User
-from app.routes.music.job import download_job
+from app.routes.music.jobs import download_job
 
-URL = "/api/music/job/{job_id}/download"
+URL = "/api/music/jobs/{job_id}/download"
 
 
 async def test_download_job_when_not_logged_in(client, faker):

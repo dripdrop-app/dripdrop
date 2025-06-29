@@ -11,7 +11,7 @@ from app.models.music import (
     ResolvedArtworkResponse,
     TagsResponse,
 )
-from app.routes.music.job import router as job_router
+from app.routes.music.jobs import router as jobs_router
 from app.services import audiotags, google, imagedownloader, ytdlp
 from app.utils.youtube import parse_youtube_video_id
 
@@ -24,7 +24,7 @@ router = APIRouter(
     dependencies=[Depends(get_authenticated_user)],
     responses={status.HTTP_401_UNAUTHORIZED: {}},
 )
-router.include_router(job_router)
+router.include_router(jobs_router)
 
 
 @router.get(

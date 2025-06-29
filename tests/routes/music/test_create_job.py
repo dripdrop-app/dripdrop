@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.db import MusicJob
 
-URL = "/api/music/job/create"
+URL = "/api/music/jobs/create"
 
 
 async def test_create_job_when_not_logged_in(client):

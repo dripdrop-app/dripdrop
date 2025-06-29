@@ -3,11 +3,11 @@ import pytest
 from fastapi import BackgroundTasks, HTTPException, UploadFile, status
 
 from app.db import MusicJob, User
-from app.routes.music.job import delete_job
+from app.routes.music.jobs import delete_job
 from app.services import audiotags, s3
 from app.settings import settings
 
-URL = "/api/music/job/{job_id}/delete"
+URL = "/api/music/jobs/{job_id}/delete"
 
 
 async def test_delete_job_when_not_logged_in(client, faker):
