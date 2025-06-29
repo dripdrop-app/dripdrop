@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal, Optional
 
 from fastapi import UploadFile
@@ -37,3 +38,26 @@ class CreateMusicJob(BaseModel):
     artist: str
     album: str
     grouping: Optional[str] = None
+
+
+class MusicJob(BaseModel):
+    id: str
+    user_email: str
+    title: str
+    artist: str
+    album: str
+    grouping: str | None = None
+    artwork_url: str | None = None
+    artwork_filename: str | None = None
+    original_filename: str | None = None
+    filename_url: str | None = None
+    video_url: str | None = None
+    download_filename: str | None = None
+    download_url: str | None = None
+    completed: datetime | None = None
+    failed: datetime | None = None
+
+
+class MusicJobListResponse(BaseModel):
+    jobs: list[MusicJob]
+    total_pages: int
