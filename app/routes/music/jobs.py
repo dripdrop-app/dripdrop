@@ -12,6 +12,7 @@ from fastapi import (
     Form,
     HTTPException,
     Path,
+    Query,
     status,
 )
 from fastapi.responses import StreamingResponse
@@ -19,8 +20,9 @@ from sqlalchemy import select
 
 from app.db import MusicFile, MusicJob
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
-from app.models.music import CreateMusicJob
+from app.models.music import CreateMusicJob, MusicJobListResponse
 from app.tasks.music import run_music_job
+from app.utils.database import query_with_pagination
 
 router = APIRouter(
     prefix="/jobs",
@@ -123,32 +125,32 @@ async def download_job(
     raise HTTPException(detail="Job not found.", status_code=status.HTTP_404_NOT_FOUND)
 
 
-# @router.get(
-#     "/list",
-#     response_model=MusicJobListResponse,
-#     responses={status.HTTP_404_NOT_FOUND: {"description": "Page not found."}},
-# )
-# async def get_jobs(
-#     user: AuthUser,
-#     db_session: DatabaseSession,
-#     page: Annotated[int, Query(..., ge=1)],
-#     per_page: Annotated[int, Query(..., le=50, gt=0)],
-# ):
-#     query = (
-#         select(MusicJob)
-#         .where(MusicJob.user_email == user.email, MusicJob.deleted_at.is_(None))
-#         .order_by(MusicJob.created_at.desc())
-#     )
-#     paginated_results = await query_with_pagination(
-#         db_session=db_session, query=query, page=page, per_page=per_page
-#     )
-#     if page > paginated_results.total_pages:
-#         raise HTTPException(
-#             detail="Page not found.", status_code=status.HTTP_404_NOT_FOUND
-#         )
-#     return MusicJobListResponse(
-#         music_jobs=paginated_results.results, total_pages=paginated_results.total_pages
-#     )
+@router.get(
+    "/list",
+    response_model=MusicJobListResponse,
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Page not found."}},
+)
+async def get_jobs(
+    user: AuthUser,
+    db_session: DatabaseSession,
+    page: Annotated[int, Query(..., ge=1)],
+    per_page: Annotated[int, Query(..., le=50, gt=0)],
+):
+    query = (
+        select(MusicJob)
+        .where(MusicJob.user_email == user.email, MusicJob.deleted_at.is_(None))
+        .order_by(MusicJob.created_at.desc())
+    )
+    paginated_results = await query_with_pagination(
+        db_session=db_session, query=query, page=page, per_page=per_page
+    )
+    if page > paginated_results.total_pages:
+        raise HTTPException(
+            detail="Page not found.", status_code=status.HTTP_404_NOT_FOUND
+        )
+    return MusicJobListResponse(
+        music_jobs=paginated_results.results, total_pages=paginated_results.total_pages
+    )
 
 
 # @api.websocket("/listen")
