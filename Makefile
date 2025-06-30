@@ -18,7 +18,7 @@ lint:
 
 .PHONY: test
 test:
-	ENV=testing uv run pytest tests
+	ENV=testing uv run pytest tests --cov=app --cov-report=term-missing
 
 .PHONY: test-fast
 test-fast:
