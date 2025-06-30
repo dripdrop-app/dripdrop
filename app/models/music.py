@@ -40,7 +40,9 @@ class CreateMusicJob(BaseModel):
     grouping: Optional[str] = None
 
 
-class MusicJob(BaseModel):
+class MusicJobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     user_email: str
     title: str
@@ -59,5 +61,5 @@ class MusicJob(BaseModel):
 
 
 class MusicJobListResponse(BaseModel):
-    jobs: list[MusicJob]
+    jobs: list[MusicJobResponse]
     total_pages: int
