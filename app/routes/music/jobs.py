@@ -176,7 +176,7 @@ async def listen_jobs(
                 )
                 music_job = await db_session.scalar(query)
                 if music_job:
-                    await websocket.send_json(message.model_dump())
+                    await websocket.send_json(parsed_message.model_dump())
             await websocket.send_json({"status": "PING"})
     except WebSocketDisconnect:
         await subscriber.stop_listening()
