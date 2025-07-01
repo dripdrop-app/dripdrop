@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Cookie, Depends, Header, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, WebSocket, status
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,18 +64,29 @@ async def get_user_from_cookie(
 CookieUser = Annotated[User | None, Depends(get_user_from_cookie)]
 
 
-async def get_authenticated_user(header_user: HeaderUser, cookie_user: CookieUser):
+async def get_authenticated_user(
+    header_user: HeaderUser,
+    cookie_user: CookieUser,
+    websocket: WebSocket | None = None,
+):
     if user := header_user or cookie_user:
         return user
+    if websocket:
+        await websocket.close()
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 AuthUser = Annotated[User, Depends(get_authenticated_user)]
 
 
-async def get_admin_user(user: AuthUser):
+async def get_admin_user(
+    user: AuthUser,
+    websocket: WebSocket | None = None,
+):
     if user.admin:
         return user
+    if websocket:
+        websocket.close()
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
 
