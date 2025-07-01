@@ -144,12 +144,8 @@ async def get_jobs(
     paginated_results = await query_with_pagination(
         db_session=db_session, query=query, page=page, per_page=per_page
     )
-    if page > paginated_results.total_pages:
-        raise HTTPException(
-            detail="Page not found.", status_code=status.HTTP_404_NOT_FOUND
-        )
     return MusicJobListResponse(
-        music_jobs=paginated_results.results, total_pages=paginated_results.total_pages
+        jobs=paginated_results.results, total_pages=paginated_results.total_pages
     )
 
 
