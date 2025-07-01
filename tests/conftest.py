@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import httpx
 import pytest
 from faker import Faker
@@ -185,6 +187,7 @@ async def create_music_job(db_session: AsyncSession, faker: Faker):
         artist: str = None,
         album: str = None,
         grouping: str = None,
+        deleted: bool = False,
     ):
         music_job = MusicJob(
             user_email=email,
@@ -193,6 +196,7 @@ async def create_music_job(db_session: AsyncSession, faker: Faker):
             artist=artist or faker.name(),
             album=album or faker.word(),
             grouping=grouping,
+            deleted_at=datetime.now(timezone.utc) if deleted else None,
         )
         db_session.add(music_job)
         await db_session.commit()
