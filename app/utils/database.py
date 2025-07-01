@@ -18,7 +18,7 @@ async def query_with_pagination(
     db_session: AsyncSession, query: Select[T], page: int, per_page: int
 ):
     items_query = query.offset((page - 1) * per_page).limit(per_page)
-    count_query = select(func.count("*")).select_from(query)
+    count_query = select(func.count("*")).select_from(query.subquery())
 
     items = await db_session.scalars(items_query)
     count = await db_session.scalar(count_query)
