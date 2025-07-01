@@ -14,6 +14,7 @@ from fastapi import (
     Path,
     Query,
     WebSocket,
+    WebSocketDisconnect,
     status,
 )
 from fastapi.responses import StreamingResponse
@@ -161,14 +162,21 @@ async def listen_jobs(
 ):
     await websocket.accept()
     subscriber = PubSub(channels=[PubSub.Channels.MUSIC_JOB_UPDATE])
-    async for message in subscriber.listen(ignore_subscribe_messages=True):
-        parsed_message = MusicJobUpdateResponse.model_validate_json(message["message"])
-        job_id = parsed_message.id
-        query = select(MusicJob).where(
-            MusicJob.user_email == user.email,
-            MusicJob.id == job_id,
-            MusicJob.deleted_at.is_(None),
-        )
-        music_job = await db_session.scalar(query)
-        if music_job:
-            await websocket.send_json(message.model_dump())
+    try:
+        async for message in subscriber.listen(ignore_subscribe_messages=True):
+            if message:
+                parsed_message = MusicJobUpdateResponse.model_validate_json(
+                    message["message"]
+                )
+                job_id = parsed_message.id
+                query = select(MusicJob).where(
+                    MusicJob.user_email == user.email,
+                    MusicJob.id == job_id,
+                    MusicJob.deleted_at.is_(None),
+                )
+                music_job = await db_session.scalar(query)
+                if music_job:
+                    await websocket.send_json(message.model_dump())
+            await websocket.send_json({"status": "PING"})
+    except WebSocketDisconnect:
+        await subscriber.stop_listening()
