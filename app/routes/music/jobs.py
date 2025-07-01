@@ -13,6 +13,7 @@ from fastapi import (
     HTTPException,
     Path,
     Query,
+    WebSocket,
     status,
 )
 from fastapi.responses import StreamingResponse
@@ -20,7 +21,12 @@ from sqlalchemy import select
 
 from app.db import MusicFile, MusicJob
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
-from app.models.music import CreateMusicJob, MusicJobListResponse
+from app.models.music import (
+    CreateMusicJob,
+    MusicJobListResponse,
+    MusicJobUpdateResponse,
+)
+from app.services.pubsub import PubSub
 from app.tasks.music import run_music_job
 from app.utils.database import query_with_pagination
 
@@ -149,21 +155,20 @@ async def get_jobs(
     )
 
 
-# @api.websocket("/listen")
-# async def listen_jobs(user: AuthenticatedUser, websocket: WebSocket):
-#     async def handler(msg):
-#         message = MusicJobUpdateResponse.model_validate(msg)
-#         job_id = message.id
-#         async with database.create_session() as session:
-#             query = select(MusicJob).where(
-#                 MusicJob.user_email == user.email,
-#                 MusicJob.id == job_id,
-#                 MusicJob.deleted_at.is_(None),
-#             )
-#             music_job = await session.scalar(query)
-#             if music_job:
-#                 await websocket.send_json(message.model_dump())
-
-#     await WebsocketChannel(channel=RedisChannels.MUSIC_JOB_UPDATE).listen(
-#         websocket=websocket, handler=handler
-#     )
+@router.websocket("/listen")
+async def listen_jobs(
+    user: AuthUser, websocket: WebSocket, db_session: DatabaseSession
+):
+    await websocket.accept()
+    subscriber = PubSub(channels=[PubSub.Channels.MUSIC_JOB_UPDATE])
+    async for message in subscriber.listen(ignore_subscribe_messages=True):
+        parsed_message = MusicJobUpdateResponse.model_validate_json(message["message"])
+        job_id = parsed_message.id
+        query = select(MusicJob).where(
+            MusicJob.user_email == user.email,
+            MusicJob.id == job_id,
+            MusicJob.deleted_at.is_(None),
+        )
+        music_job = await db_session.scalar(query)
+        if music_job:
+            await websocket.send_json(message.model_dump())
