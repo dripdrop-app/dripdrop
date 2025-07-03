@@ -67,7 +67,7 @@ CookieUser = Annotated[User | None, Depends(get_user_from_cookie)]
 async def get_authenticated_user(
     header_user: HeaderUser,
     cookie_user: CookieUser,
-    websocket: WebSocket | None = None,
+    websocket: WebSocket = None,
 ):
     if user := header_user or cookie_user:
         return user
@@ -81,7 +81,7 @@ AuthUser = Annotated[User, Depends(get_authenticated_user)]
 
 async def get_admin_user(
     user: AuthUser,
-    websocket: WebSocket | None = None,
+    websocket: WebSocket = None,
 ):
     if user.admin:
         return user
