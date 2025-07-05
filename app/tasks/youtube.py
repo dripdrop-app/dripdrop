@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import dateutil.parser
 from sqlalchemy import and_, delete, false, select
+from sqlalchemy.orm import joinedload
 
 from app.db import (
     User,
@@ -183,26 +184,23 @@ async def update_channel_videos(self: QueueTask, date_after: str | None = None):
         query = (
             select(YoutubeSubscription)
             .where(YoutubeSubscription.deleted_at.is_(None))
-            .distinct()
+            .distinct(YoutubeSubscription.channel_id)
+            .options(joinedload(YoutubeSubscription.channel))
         )
         subscriptions = await db_session.scalars(query)
         for subscription in subscriptions:
-            query = select(YoutubeChannel).where(
-                YoutubeChannel.id == subscription.channel_id
+            channel = subscription.channel
+            date_after_time = min(
+                datetime.now(timezone.utc) - timedelta(days=1),
+                channel.last_videos_updated,
             )
-            channel = await db_session.scalar(query)
-            if channel:
-                date_after_time = min(
-                    datetime.now(timezone.utc) - timedelta(days=1),
-                    channel.last_videos_updated,
-                )
-                if date_after:
-                    date_after_time = datetime.strptime(date_after, "%Y%m%d")
-                await asyncio.to_thread(
-                    add_channel_videos.delay,
-                    channel_id=subscription.channel_id,
-                    date_after=date_after_time.strftime("%Y%m%d"),
-                )
+            if date_after:
+                date_after_time = datetime.strptime(date_after, "%Y%m%d")
+            await asyncio.to_thread(
+                add_channel_videos.delay,
+                channel_id=subscription.channel_id,
+                date_after=date_after_time.strftime("%Y%m%d"),
+            )
 
 
 @celery.task(bind=True)
