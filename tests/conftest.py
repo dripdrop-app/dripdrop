@@ -9,7 +9,15 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import app
-from app.db import Base, MusicJob, User, engine, session_maker
+from app.db import (
+    Base,
+    MusicJob,
+    User,
+    YoutubeChannel,
+    YoutubeSubscription,
+    engine,
+    session_maker,
+)
 from app.services import s3, tempfiles
 from app.services.pubsub import PubSub
 from app.settings import ENV, settings
@@ -207,5 +215,35 @@ async def create_music_job(db_session: AsyncSession, faker: Faker):
         )
         db_session.add(music_job)
         return music_job
+
+    return _run
+
+
+@pytest.fixture(scope="function")
+async def create_youtube_channel(db_session: AsyncSession, faker: Faker):
+    async def _run(title: str = None, last_videos_updated: datetime = None):
+        channel = YoutubeChannel(
+            id=faker.uuid4(),
+            title=title or faker.word(),
+            last_videos_updated=last_videos_updated or datetime.now(timezone.utc),
+        )
+        db_session.add(channel)
+        await db_session.commit()
+        return channel
+
+    return _run
+
+
+@pytest.fixture(scope="function")
+async def create_youtube_subscription(db_session: AsyncSession):
+    async def _run(channel_id: str, email: str, deleted: bool = False):
+        subscription = YoutubeSubscription(
+            email=email,
+            channel_id=channel_id,
+            deleted_at=datetime.now(timezone.utc) if deleted else None,
+        )
+        db_session.add(subscription)
+        await db_session.commit()
+        return subscription
 
     return _run
