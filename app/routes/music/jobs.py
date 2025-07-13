@@ -33,7 +33,7 @@ from app.utils.database import query_with_pagination
 
 router = APIRouter(
     prefix="/jobs",
-    tags=["Music Jobs"],
+    tags=["Jobs"],
     dependencies=[Depends(get_authenticated_user)],
 )
 
@@ -132,11 +132,7 @@ async def download_job(
     raise HTTPException(detail="Job not found.", status_code=status.HTTP_404_NOT_FOUND)
 
 
-@router.get(
-    "/list",
-    response_model=MusicJobListResponse,
-    responses={status.HTTP_404_NOT_FOUND: {"description": "Page not found."}},
-)
+@router.get("/list", response_model=MusicJobListResponse)
 async def get_jobs(
     user: AuthUser,
     db_session: DatabaseSession,
