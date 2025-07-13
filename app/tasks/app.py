@@ -13,7 +13,7 @@ class QueueTask(Task):
     @asynccontextmanager
     async def db_session(self):
         engine = create_async_engine(settings.async_database_url)
-        sessionmaker = async_sessionmaker(engine)
+        sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
         async with sessionmaker() as session:
             yield session
         await engine.dispose()
