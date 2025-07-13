@@ -9,7 +9,7 @@ def provide_categories(fake_categories: list[dict]):
     async def _run():
         yield [google.YoutubeVideoCategory.model_validate(fc) for fc in fake_categories]
 
-    return _run
+    return lambda *args, **kwargs: _run()
 
 
 async def test_update_video_categories(db_session, faker, monkeypatch):
