@@ -68,7 +68,7 @@ async def test_add_channel_videos_with_date_after(
         google, "get_channel_latest_videos", provide_videos(new_api_videos)
     )
 
-    date_after = faker.date_between_dates(date_start="-6d", date_end="-4d")
+    date_after = faker.date_time_between(date_start="-6d", date_end="-5d")
     await add_channel_videos(
         channel_id=channel.id,
         date_after=date_after.strftime("%Y%m%d"),
@@ -77,7 +77,7 @@ async def test_add_channel_videos_with_date_after(
     expected_videos = [
         new_api_video
         for new_api_video in new_api_videos
-        if not datetime.fromisoformat(new_api_video["published"]).date() < date_after
+        if not datetime.fromisoformat(new_api_video["published"]) < date_after
     ]
     assert expected_videos == [
         {
