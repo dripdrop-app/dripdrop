@@ -42,8 +42,7 @@ async def update_user_subscriptions(self: QueueTask, email: str):
                         id=subscribed_channel.id,
                         title=subscribed_channel.title,
                         thumbnail=subscribed_channel.thumbnail,
-                        last_videos_updated=datetime.now(timezone.utc)
-                        - timedelta(days=365),
+                        last_videos_updated=datetime.now(timezone.utc),
                     )
                     db_session.add(channel)
                     await db_session.commit()
@@ -180,8 +179,8 @@ async def update_channel_videos(self: QueueTask, date_after: date | None = None)
             .distinct(YoutubeSubscription.channel_id)
             .options(joinedload(YoutubeSubscription.channel))
         )
-        subscriptions = await db_session.scalars(query)
-        for subscription in subscriptions:
+        stream = await db_session.stream_scalars(query)
+        async for subscription in stream:
             channel = subscription.channel
             if not date_after:
                 date_after = min(
@@ -199,8 +198,8 @@ async def update_channel_videos(self: QueueTask, date_after: date | None = None)
 async def update_subscriptions(self: QueueTask):
     async with self.db_session() as db_session:
         query = select(User)
-        users = await db_session.scalars(query)
-        for user in users:
+        stream = await db_session.stream_scalars(query)
+        async for user in stream:
             await asyncio.to_thread(
                 update_user_subscriptions.delay,
                 email=user.email,
