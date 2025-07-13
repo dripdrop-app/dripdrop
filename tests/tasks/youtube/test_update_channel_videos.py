@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import timezone
 from unittest.mock import MagicMock, call
 
 from app.db import User, YoutubeChannel
@@ -6,7 +6,7 @@ from app.tasks.youtube import add_channel_videos, update_channel_videos
 
 
 async def test_update_channel_videos(
-    create_user, monkeypatch, create_youtube_channel, create_youtube_subscription
+    create_user, monkeypatch, create_youtube_channel, create_youtube_subscription, faker
 ):
     """
     Test update channel videos task. All channels belonging to
@@ -14,19 +14,24 @@ async def test_update_channel_videos(
     date after is specified.
     """
 
-    yesterday_date = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y%m%d")
+    yesterday_date = faker.date_time_between(
+        start_date="-2d", end_date="-1d", tzinfo=timezone.utc
+    )
 
     add_channel_videos_mock = MagicMock()
     monkeypatch.setattr(add_channel_videos, "delay", add_channel_videos_mock)
 
     user: User = await create_user()
-    channels: list[YoutubeChannel] = [await create_youtube_channel() for _ in range(10)]
+    channels: list[YoutubeChannel] = [
+        await create_youtube_channel(last_videos_updated=yesterday_date)
+        for _ in range(10)
+    ]
     for channel in channels:
         await create_youtube_subscription(channel_id=channel.id, email=user.email)
     await update_channel_videos()
     add_channel_videos_mock.assert_has_calls(
         [
-            call(channel_id=channel.id, date_after=yesterday_date)
+            call(channel_id=channel.id, date_after=yesterday_date.strftime("%Y%m%d"))
             for channel in channels
         ],
         any_order=True,
@@ -34,20 +39,25 @@ async def test_update_channel_videos(
 
 
 async def test_update_channel_videos_with_deleted_subscriptions(
-    create_user, monkeypatch, create_youtube_channel, create_youtube_subscription
+    create_user, monkeypatch, create_youtube_channel, create_youtube_subscription, faker
 ):
     """
     Test update channel videos task with deleted subscriptions. All channels belonging to
     an active subscription should be updated within the last day.
     """
 
-    yesterday_date = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y%m%d")
+    yesterday_date = faker.date_time_between(
+        start_date="-2d", end_date="-1d", tzinfo=timezone.utc
+    )
 
     add_channel_videos_mock = MagicMock()
     monkeypatch.setattr(add_channel_videos, "delay", add_channel_videos_mock)
 
     user: User = await create_user()
-    channels: list[YoutubeChannel] = [await create_youtube_channel() for _ in range(10)]
+    channels: list[YoutubeChannel] = [
+        await create_youtube_channel(last_videos_updated=yesterday_date)
+        for _ in range(10)
+    ]
     for i, channel in enumerate(channels):
         await create_youtube_subscription(
             channel_id=channel.id, email=user.email, deleted=i > 4
@@ -55,7 +65,7 @@ async def test_update_channel_videos_with_deleted_subscriptions(
     await update_channel_videos()
     add_channel_videos_mock.assert_has_calls(
         [
-            call(channel_id=channel.id, date_after=yesterday_date)
+            call(channel_id=channel.id, date_after=yesterday_date.strftime("%Y%m%d"))
             for channel in channels[:5]
         ],
         any_order=True,
@@ -63,14 +73,14 @@ async def test_update_channel_videos_with_deleted_subscriptions(
 
 
 async def test_update_channel_videos_with_specified_date_after(
-    create_user, monkeypatch, create_youtube_channel, create_youtube_subscription
+    create_user, monkeypatch, create_youtube_channel, create_youtube_subscription, faker
 ):
     """
     Test update channel videos task with a specified date after. All channels belonging to
     an active subscription should be updated with the date after given.
     """
 
-    date_after = (datetime.now(timezone.utc) - timedelta(days=360)).strftime("%Y%m%d")
+    date_after = faker.date_time(tzinfo=timezone.utc)
 
     add_channel_videos_mock = MagicMock()
     monkeypatch.setattr(add_channel_videos, "delay", add_channel_videos_mock)
@@ -79,15 +89,18 @@ async def test_update_channel_videos_with_specified_date_after(
     channels: list[YoutubeChannel] = [await create_youtube_channel() for _ in range(10)]
     for channel in channels:
         await create_youtube_subscription(channel_id=channel.id, email=user.email)
-    await update_channel_videos(date_after=date_after)
+    await update_channel_videos(date_after=date_after.strftime("%Y%m%d"))
     add_channel_videos_mock.assert_has_calls(
-        [call(channel_id=channel.id, date_after=date_after) for channel in channels],
+        [
+            call(channel_id=channel.id, date_after=date_after.strftime("%Y%m%d"))
+            for channel in channels
+        ],
         any_order=True,
     )
 
 
 async def test_update_channel_videos_with_min_last_updated(
-    create_user, monkeypatch, create_youtube_channel, create_youtube_subscription
+    create_user, monkeypatch, create_youtube_channel, create_youtube_subscription, faker
 ):
     """
     Test update channel videos task with a no specified date after it should
@@ -95,7 +108,9 @@ async def test_update_channel_videos_with_min_last_updated(
     on which is less.
     """
 
-    month_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    month_ago = faker.date_time_between(
+        start_date="-60d", end_date="-30d", tzinfo=timezone.utc
+    )
 
     add_channel_videos_mock = MagicMock()
     monkeypatch.setattr(add_channel_videos, "delay", add_channel_videos_mock)
@@ -107,5 +122,5 @@ async def test_update_channel_videos_with_min_last_updated(
     await create_youtube_subscription(channel_id=channel.id, email=user.email)
     await update_channel_videos()
     add_channel_videos_mock.assert_has_calls(
-        [call(channel_id=channel.id, date_after=datetime.strftime(month_ago, "%Y%m%d"))]
+        [call(channel_id=channel.id, date_after=month_ago.strftime("%Y%m%d"))]
     )
