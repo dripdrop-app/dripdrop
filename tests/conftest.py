@@ -15,6 +15,8 @@ from app.db import (
     User,
     YoutubeChannel,
     YoutubeSubscription,
+    YoutubeVideo,
+    YoutubeVideoCategory,
     engine,
     session_maker,
 )
@@ -204,7 +206,7 @@ async def create_music_job(db_session: AsyncSession, faker: Faker):
             artist=artist or faker.name(),
             album=album or faker.word(),
             grouping=grouping,
-            deleted_at=datetime.now(timezone.utc) if deleted else None,
+            deleted_at=faker.date_time(tzinfo=timezone.utc) if deleted else None,
         )
         db_session.add(music_job)
         await db_session.commit()
@@ -225,7 +227,8 @@ async def create_youtube_channel(db_session: AsyncSession, faker: Faker):
         channel = YoutubeChannel(
             id=faker.uuid4(),
             title=title or faker.word(),
-            last_videos_updated=last_videos_updated or datetime.now(timezone.utc),
+            last_videos_updated=last_videos_updated
+            or faker.date_time(tzinfo=timezone.utc),
         )
         db_session.add(channel)
         await db_session.commit()
@@ -235,15 +238,63 @@ async def create_youtube_channel(db_session: AsyncSession, faker: Faker):
 
 
 @pytest.fixture(scope="function")
-async def create_youtube_subscription(db_session: AsyncSession):
+async def create_youtube_subscription(db_session: AsyncSession, faker: Faker):
     async def _run(channel_id: str, email: str, deleted: bool = False):
         subscription = YoutubeSubscription(
             email=email,
             channel_id=channel_id,
-            deleted_at=datetime.now(timezone.utc) if deleted else None,
+            deleted_at=faker.date_time(tzinfo=timezone.utc) if deleted else None,
         )
         db_session.add(subscription)
         await db_session.commit()
         return subscription
+
+    return _run
+
+
+@pytest.fixture(scope="function")
+async def create_youtube_video_category(db_session: AsyncSession, faker: Faker):
+    async def _run(name: str = None):
+        category = YoutubeVideoCategory(name=name or faker.name())
+        db_session.add(category)
+        await db_session.commit()
+        return category
+
+    return _run
+
+
+@pytest.fixture(scope="function")
+async def create_youtube_video(
+    db_session: AsyncSession,
+    faker: Faker,
+    create_youtube_channel,
+    create_youtube_video_category,
+):
+    async def _run(
+        title: str = None,
+        thumbnail: str = None,
+        channel_id: str = None,
+        category_id: str = None,
+        description: str = None,
+        published_at: datetime = None,
+    ):
+        if not channel_id:
+            channel: YoutubeChannel = await create_youtube_channel()
+            channel_id = channel.id
+        if not category_id:
+            category: YoutubeVideoCategory = await create_youtube_video_category()
+            category_id = category.id
+        video = YoutubeVideo(
+            id=faker.uuid4(),
+            title=title or faker.sentence(),
+            thumbnail=thumbnail or faker.image_url(),
+            channel_id=channel_id,
+            category_id=category_id,
+            description=description or faker.sentence(),
+            published_at=published_at or faker.date_time(tzinfo=timezone.utc),
+        )
+        db_session.add(video)
+        await db_session.commit()
+        return video
 
     return _run
