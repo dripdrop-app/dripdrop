@@ -144,14 +144,14 @@ async def add_channel_videos(
                 existing_video = await db_session.scalar(query)
 
                 if existing_video:
+                    if [existing_video.title, existing_video.thumbnail] != [
+                        video.title,
+                        video.thumbnail,
+                    ]:
+                        existing_video.published_at = video_upload_date
                     existing_video.title = video.title
                     existing_video.thumbnail = video.thumbnail
                     existing_video.description = video.description
-                    if (
-                        existing_video.title != video.title
-                        or existing_video.thumbnail != video.thumbnail
-                    ):
-                        existing_video.published_at = video_upload_date
                 else:
                     db_session.add(
                         YoutubeVideo(
@@ -164,6 +164,7 @@ async def add_channel_videos(
                             published_at=video_upload_date,
                         )
                     )
+                await db_session.commit()
             if end_update:
                 break
 
@@ -174,7 +175,6 @@ async def add_channel_videos(
         )
         channel.updating = False
         channel.last_videos_updated = datetime.now(timezone.utc)
-
         await db_session.commit()
 
 
