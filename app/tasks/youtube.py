@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import dateutil.parser
 from sqlalchemy import and_, delete, false, select
@@ -17,7 +17,6 @@ from app.db import (
 from app.models.youtube import YoutubeChannelUpdateResponse
 from app.services import google
 from app.services.pubsub import PubSub
-from app.settings import settings
 from app.tasks.app import QueueTask, celery
 
 
@@ -107,14 +106,8 @@ async def update_user_subscriptions(self: QueueTask, email: str):
 async def add_channel_videos(
     self: QueueTask,
     channel_id: str,
-    date_after: str | None = None,
+    date_after: date | None = None,
 ):
-    date_limit = (
-        datetime.strptime(date_after, "%Y%m%d").replace(tzinfo=settings.timezone)
-        if date_after
-        else None
-    )
-
     pubsub = PubSub(channels=[PubSub.Channels.YOUTUBE_CHANNEL_UPDATE])
 
     async with self.db_session() as db_session:
@@ -136,7 +129,7 @@ async def add_channel_videos(
             end_update = False
             for video in videos:
                 video_upload_date = dateutil.parser.parse(video.published)
-                if date_limit and video_upload_date < date_limit:
+                if date_after and video_upload_date.date() < date_after:
                     end_update = True
                     break
 
@@ -179,7 +172,7 @@ async def add_channel_videos(
 
 
 @celery.task(bind=True)
-async def update_channel_videos(self: QueueTask, date_after: str | None = None):
+async def update_channel_videos(self: QueueTask, date_after: date | None = None):
     async with self.db_session() as db_session:
         query = (
             select(YoutubeSubscription)
@@ -190,16 +183,15 @@ async def update_channel_videos(self: QueueTask, date_after: str | None = None):
         subscriptions = await db_session.scalars(query)
         for subscription in subscriptions:
             channel = subscription.channel
-            date_after_time = min(
-                datetime.now(timezone.utc) - timedelta(days=1),
-                channel.last_videos_updated,
-            )
-            if date_after:
-                date_after_time = datetime.strptime(date_after, "%Y%m%d")
+            if not date_after:
+                date_after = min(
+                    datetime.now(timezone.utc) - timedelta(days=1),
+                    channel.last_videos_updated,
+                ).date()
             await asyncio.to_thread(
                 add_channel_videos.delay,
                 channel_id=subscription.channel_id,
-                date_after=date_after_time.strftime("%Y%m%d"),
+                date_after=date_after,
             )
 
 

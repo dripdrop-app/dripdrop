@@ -31,7 +31,7 @@ async def test_update_channel_videos(
     await update_channel_videos()
     add_channel_videos_mock.assert_has_calls(
         [
-            call(channel_id=channel.id, date_after=yesterday_date.strftime("%Y%m%d"))
+            call(channel_id=channel.id, date_after=yesterday_date.date())
             for channel in channels
         ],
         any_order=True,
@@ -65,7 +65,7 @@ async def test_update_channel_videos_with_deleted_subscriptions(
     await update_channel_videos()
     add_channel_videos_mock.assert_has_calls(
         [
-            call(channel_id=channel.id, date_after=yesterday_date.strftime("%Y%m%d"))
+            call(channel_id=channel.id, date_after=yesterday_date.date())
             for channel in channels[:5]
         ],
         any_order=True,
@@ -89,10 +89,10 @@ async def test_update_channel_videos_with_specified_date_after(
     channels: list[YoutubeChannel] = [await create_youtube_channel() for _ in range(10)]
     for channel in channels:
         await create_youtube_subscription(channel_id=channel.id, email=user.email)
-    await update_channel_videos(date_after=date_after.strftime("%Y%m%d"))
+    await update_channel_videos(date_after=date_after.date())
     add_channel_videos_mock.assert_has_calls(
         [
-            call(channel_id=channel.id, date_after=date_after.strftime("%Y%m%d"))
+            call(channel_id=channel.id, date_after=date_after.date())
             for channel in channels
         ],
         any_order=True,
@@ -122,5 +122,5 @@ async def test_update_channel_videos_with_min_last_updated(
     await create_youtube_subscription(channel_id=channel.id, email=user.email)
     await update_channel_videos()
     add_channel_videos_mock.assert_has_calls(
-        [call(channel_id=channel.id, date_after=month_ago.strftime("%Y%m%d"))]
+        [call(channel_id=channel.id, date_after=month_ago.date())]
     )

@@ -68,10 +68,12 @@ async def test_add_channel_videos_with_date_after(
         google, "get_channel_latest_videos", provide_videos(new_api_videos)
     )
 
-    date_after = faker.date_time_between(start_date="-6d", end_date="-5d")
+    date_after = faker.date_time_between(
+        start_date="-6d", end_date="-5d", tzinfo=timezone.utc
+    )
     await add_channel_videos(
         channel_id=channel.id,
-        date_after=date_after.strftime("%Y%m%d"),
+        date_after=date_after.date(),
     )
     new_channel_videos = (await db_session.scalars(select(YoutubeVideo))).all()
     expected_videos = [
