@@ -18,17 +18,6 @@ class YoutubeChannelResponse(ResponseBaseModel):
     updating: bool
 
 
-class YoutubeSubscriptionResponse(ResponseBaseModel):
-    channel_id: str
-    channel_title: str
-    channel_thumbnail: str | None
-
-
-class SubscriptionsResponse(ResponseBaseModel):
-    subscriptions: List[YoutubeSubscriptionResponse]
-    total_pages: int
-
-
 class YoutubeVideoCategoryResponse(ResponseBaseModel):
     id: int
     name: str
