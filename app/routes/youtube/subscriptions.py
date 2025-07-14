@@ -68,7 +68,6 @@ async def add_user_subscription(
             YoutubeSubscription.email == user.email,
             YoutubeSubscription.channel_id == channel_info.id,
         )
-        subscription = await db_session.scalar(query)
         if subscription := await db_session.scalar(query):
             if subscription.deleted_at is None:
                 raise HTTPException(
@@ -94,7 +93,7 @@ async def add_user_subscription(
             )
             db_session.add(subscription)
         await db_session.commit()
-        background_tasks.add_task(add_channel_videos, channel_id=channel.id)
+        background_tasks.add_task(add_channel_videos.delay, channel_id=channel.id)
         return YoutubeSubscriptionResponse(
             channel_id=subscription.channel_id,
             channel_title=channel.title,
