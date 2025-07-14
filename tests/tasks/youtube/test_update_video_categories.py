@@ -5,14 +5,9 @@ from app.services import google
 from app.tasks.youtube import update_video_categories
 
 
-def provide_categories(fake_categories: list[dict]):
-    async def _run():
-        yield [google.YoutubeVideoCategory.model_validate(fc) for fc in fake_categories]
-
-    return lambda *args, **kwargs: _run()
-
-
-async def test_update_video_categories(db_session, faker, monkeypatch):
+async def test_update_video_categories(
+    db_session, faker, monkeypatch, provide_google_api_response
+):
     """
     Test updating video categories from google api.
     """
@@ -20,7 +15,11 @@ async def test_update_video_categories(db_session, faker, monkeypatch):
     fake_categories = [{"id": i, "name": faker.word()} for i in range(10)]
 
     monkeypatch.setattr(
-        google, "get_video_categories", provide_categories(fake_categories)
+        google,
+        "get_video_categories",
+        provide_google_api_response(
+            pages=[fake_categories], model=google.YoutubeVideoCategory
+        ),
     )
     await update_video_categories()
     new_categories = await db_session.scalars(select(YoutubeVideoCategory))
@@ -30,7 +29,7 @@ async def test_update_video_categories(db_session, faker, monkeypatch):
 
 
 async def test_update_video_categories_with_existing_categories(
-    db_session, faker, monkeypatch
+    db_session, faker, monkeypatch, provide_google_api_response
 ):
     """
     Test update video categories that update existing categories. The category should be
@@ -46,7 +45,9 @@ async def test_update_video_categories_with_existing_categories(
     monkeypatch.setattr(
         google,
         "get_video_categories",
-        provide_categories(updated_categories),
+        provide_google_api_response(
+            pages=[updated_categories], model=google.YoutubeVideoCategory
+        ),
     )
     await update_video_categories()
     await db_session.refresh(category)

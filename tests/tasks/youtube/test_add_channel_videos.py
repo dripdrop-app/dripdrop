@@ -14,13 +14,6 @@ from app.services.pubsub import PubSub
 from app.tasks.youtube import add_channel_videos
 
 
-def provide_videos(fake_videos: list[dict]):
-    async def _run():
-        yield [google.YoutubeVideoInfo.model_validate(fv) for fv in fake_videos]
-
-    return lambda *args, **kwargs: _run()
-
-
 async def test_add_channel_videos_with_non_existent_channel(faker):
     """
     Test add channel videos task for channel that doesn't exist.
@@ -36,6 +29,7 @@ async def test_add_channel_videos_with_date_after(
     monkeypatch,
     create_youtube_channel,
     create_youtube_video_category,
+    provide_google_api_response,
     db_session,
 ):
     """
@@ -65,7 +59,11 @@ async def test_add_channel_videos_with_date_after(
     ]
     new_api_videos.reverse()
     monkeypatch.setattr(
-        google, "get_channel_latest_videos", provide_videos(new_api_videos)
+        google,
+        "get_channel_latest_videos",
+        provide_google_api_response(
+            pages=[new_api_videos], model=google.YoutubeVideoInfo
+        ),
     )
 
     date_after = faker.date_time_between(
@@ -96,7 +94,10 @@ async def test_add_channel_videos_with_date_after(
 
 
 async def test_add_channel_videos_messages(
-    monkeypatch, create_youtube_channel, get_pubsub_channel_messages
+    monkeypatch,
+    create_youtube_channel,
+    get_pubsub_channel_messages,
+    provide_google_api_response,
 ):
     """
     Test add channel videos task outputs the correct pubsub messages.
@@ -104,7 +105,11 @@ async def test_add_channel_videos_messages(
 
     channel: YoutubeChannel = await create_youtube_channel()
 
-    monkeypatch.setattr(google, "get_channel_latest_videos", provide_videos([]))
+    monkeypatch.setattr(
+        google,
+        "get_channel_latest_videos",
+        provide_google_api_response(pages=[[]], model=google.YoutubeVideoInfo),
+    )
 
     task = add_channel_videos(channel_id=channel.id)
 
@@ -126,7 +131,12 @@ async def test_add_channel_videos_messages(
 
 
 async def test_add_channel_videos_with_update(
-    monkeypatch, faker, create_youtube_video, create_youtube_channel, db_session
+    monkeypatch,
+    faker,
+    create_youtube_video,
+    create_youtube_channel,
+    provide_google_api_response,
+    db_session,
 ):
     """
     Test add channel videos with videos that already exist. It should update
@@ -168,7 +178,11 @@ async def test_add_channel_videos_with_update(
     ]
 
     monkeypatch.setattr(
-        google, "get_channel_latest_videos", provide_videos(updated_videos)
+        google,
+        "get_channel_latest_videos",
+        provide_google_api_response(
+            pages=[updated_videos], model=google.YoutubeVideoInfo
+        ),
     )
     await add_channel_videos(channel_id=channel.id)
 
