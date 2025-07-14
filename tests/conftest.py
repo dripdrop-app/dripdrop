@@ -238,8 +238,13 @@ async def create_youtube_channel(db_session: AsyncSession, faker: Faker):
 
 
 @pytest.fixture(scope="function")
-async def create_youtube_subscription(db_session: AsyncSession, faker: Faker):
-    async def _run(channel_id: str, email: str, deleted: bool = False):
+async def create_youtube_subscription(
+    db_session: AsyncSession, faker: Faker, create_youtube_channel
+):
+    async def _run(email: str, channel_id: str = None, deleted: bool = False):
+        if not channel_id:
+            channel: YoutubeChannel = await create_youtube_channel()
+            channel_id = channel.id
         subscription = YoutubeSubscription(
             email=email,
             channel_id=channel_id,

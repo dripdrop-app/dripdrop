@@ -1,6 +1,6 @@
 from fastapi import status
 
-from app.db import User, YoutubeChannel
+from app.db import User, YoutubeSubscription
 
 URL = "/api/youtube/subscriptions/user"
 
@@ -30,7 +30,7 @@ async def test_deleting_user_subscription_for_non_existent_channel(
 
 
 async def test_deleting_user_subscription(
-    client, create_youtube_channel, create_youtube_subscription, create_and_login_user
+    client, create_youtube_subscription, create_and_login_user
 ):
     """
     Test deleting a user subscription. It update the subscription deleted_at
@@ -38,7 +38,8 @@ async def test_deleting_user_subscription(
     """
 
     user: User = await create_and_login_user()
-    channel: YoutubeChannel = await create_youtube_channel()
-    await create_youtube_subscription(channel_id=channel.id, email=user.email)
-    response = await client.delete(URL, params={"channel_id": channel.id})
+    subscription: YoutubeSubscription = await create_youtube_subscription(
+        email=user.email
+    )
+    response = await client.delete(URL, params={"channel_id": subscription.channel_id})
     assert response.status_code == status.HTTP_200_OK
