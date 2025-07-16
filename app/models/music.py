@@ -60,6 +60,6 @@ class MusicJobResponse(BaseModel):
     failed: datetime | None = None
 
 
-class MusicJobListResponse(BaseModel):
+class MusicJobListResponse(Response):
     jobs: list[MusicJobResponse]
     total_pages: int
