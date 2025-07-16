@@ -2,7 +2,7 @@ import math
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
-from sqlalchemy import ScalarResult, Select, func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 T = TypeVar("T")
@@ -24,4 +24,4 @@ async def query_with_pagination(
     count = await db_session.scalar(count_query)
     total_pages = math.ceil(count / per_page)
 
-    return PaginatedResults[ScalarResult[T]](results=items, total_pages=total_pages)
+    return PaginatedResults[T](results=items, total_pages=total_pages)
