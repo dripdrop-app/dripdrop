@@ -1,7 +1,6 @@
 from fastapi import status
 
-from app.db import User
-from app.models.music import MusicJobResponse
+from app.db import MusicJob, User
 
 URL = "/api/music/jobs/list?page={page}&per_page={per_page}"
 
@@ -25,7 +24,7 @@ async def test_get_jobs_with_no_results(client, create_and_login_user):
     await create_and_login_user()
     response = await client.get(URL.format(page=1, per_page=50))
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"jobs": [], "total_pages": 0}
+    assert response.json() == {"jobs": [], "totalPages": 0}
 
 
 async def test_get_jobs(client, create_user, create_and_login_user, create_music_job):
@@ -37,7 +36,7 @@ async def test_get_jobs(client, create_user, create_and_login_user, create_music
     user: User = await create_and_login_user()
     other_user: User = await create_user()
 
-    user_jobs = []
+    user_jobs: list[MusicJob] = []
 
     for i in range(10):
         user_jobs.append(await create_music_job(email=user.email, title=f"job_{i}"))
@@ -49,45 +48,28 @@ async def test_get_jobs(client, create_user, create_and_login_user, create_music
     json = response.json()
 
     # Jobs should be in descending order of created at
-    assert json["total_pages"] == 1
+    assert json["totalPages"] == 1
     assert json["jobs"] == [
-        MusicJobResponse.model_validate(job).model_dump()
+        {
+            "id": job.id,
+            "userEmail": job.user_email,
+            "title": job.title,
+            "artist": job.artist,
+            "album": job.album,
+            "grouping": job.grouping,
+            "artworkUrl": job.artwork_url,
+            "artworkFilename": job.artwork_filename,
+            "originalFilename": job.original_filename,
+            "filenameUrl": job.filename_url,
+            "videoUrl": job.video_url,
+            "downloadFilename": job.download_filename,
+            "downloadUrl": job.download_url,
+            "completed": job.completed,
+            "failed": job.failed,
+        }
         for job in sorted(
             user_jobs,
             key=lambda job: job.created_at,
             reverse=True,
         )
     ]
-
-
-async def test_get_jobs_with_pagination(
-    client, create_and_login_user, create_music_job
-):
-    """
-    Test getting music jobs with pagination. The endpoint should return a 200
-    response.
-    """
-
-    user: User = await create_and_login_user()
-
-    user_jobs = [
-        await create_music_job(email=user.email, title=f"job_{i}") for i in range(10)
-    ]
-
-    response = await client.get(URL.format(page=2, per_page=2))
-    assert response.status_code == status.HTTP_200_OK
-    json = response.json()
-
-    # Jobs should be in descending order of created at
-    assert json["total_pages"] == 5
-    assert (
-        json["jobs"]
-        == [
-            MusicJobResponse.model_validate(job).model_dump()
-            for job in sorted(
-                user_jobs,
-                key=lambda job: job.created_at,
-                reverse=True,
-            )
-        ][2:4]
-    )

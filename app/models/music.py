@@ -40,7 +40,7 @@ class CreateMusicJob(BaseModel):
     grouping: Optional[str] = None
 
 
-class MusicJobResponse(BaseModel):
+class MusicJobResponse(Response):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
