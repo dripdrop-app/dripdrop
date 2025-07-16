@@ -14,7 +14,7 @@ from sqlalchemy.orm import joinedload
 
 from app.db import YoutubeChannel, YoutubeSubscription
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
-from app.models.youtube import SubscriptionsResponse, YoutubeSubscriptionResponse
+from app.models.youtube import YoutubeChannelResponse, YoutubeSubscriptionsResponse
 from app.services import google
 from app.tasks.youtube import add_channel_videos
 from app.utils.database import query_with_pagination
@@ -26,7 +26,7 @@ router = APIRouter(
 )
 
 
-@router.get("list", response_model=SubscriptionsResponse)
+@router.get("/list", response_model=YoutubeSubscriptionsResponse)
 async def get_youtube_subscriptions(
     user: AuthUser,
     db_session: DatabaseSession,
@@ -46,15 +46,18 @@ async def get_youtube_subscriptions(
     paginated_results = await query_with_pagination(
         db_session=db_session, query=query, page=page, per_page=per_page
     )
-    return SubscriptionsResponse(
-        subscriptions=paginated_results.results,
+    return YoutubeSubscriptionsResponse(
+        channels=[
+            {"subscribed": True, **result.channel.__dict__}
+            for result in paginated_results.results
+        ],
         total_pages=paginated_results.total_pages,
     )
 
 
 @router.put(
     "/user",
-    response_model=YoutubeSubscriptionResponse,
+    response_model=YoutubeChannelResponse,
     responses={status.HTTP_400_BAD_REQUEST: {}},
 )
 async def add_user_subscription(
@@ -64,9 +67,13 @@ async def add_user_subscription(
     channel_id: Annotated[str, Query()],
 ):
     if channel_info := await google.get_channel_info(channel_id=channel_id):
-        query = select(YoutubeSubscription).where(
-            YoutubeSubscription.email == user.email,
-            YoutubeSubscription.channel_id == channel_info.id,
+        query = (
+            select(YoutubeSubscription)
+            .where(
+                YoutubeSubscription.email == user.email,
+                YoutubeSubscription.channel_id == channel_info.id,
+            )
+            .options(joinedload(YoutubeSubscription.channel))
         )
         if subscription := await db_session.scalar(query):
             if subscription.deleted_at is None:
@@ -94,11 +101,7 @@ async def add_user_subscription(
             db_session.add(subscription)
         await db_session.commit()
         background_tasks.add_task(add_channel_videos.delay, channel_id=channel.id)
-        return YoutubeSubscriptionResponse(
-            channel_id=subscription.channel_id,
-            channel_title=channel.title,
-            channel_thumbnail=channel.thumbnail,
-        )
+        return YoutubeChannelResponse.model_validate(subscription.channel)
     raise HTTPException(
         detail="Channel not found.",
         status_code=status.HTTP_400_BAD_REQUEST,
