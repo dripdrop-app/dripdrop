@@ -67,7 +67,7 @@ async def test_add_channel_videos_with_date_after(
     )
 
     date_after = faker.date_time_between(
-        start_date="-6d", end_date="-5d", tzinfo=timezone.utc
+        start_date="-5d", end_date="-5d", tzinfo=timezone.utc
     )
     await add_channel_videos(
         channel_id=channel.id,
@@ -77,7 +77,8 @@ async def test_add_channel_videos_with_date_after(
     expected_videos = [
         new_api_video
         for new_api_video in new_api_videos
-        if not datetime.fromisoformat(new_api_video["published"]) < date_after
+        if not datetime.fromisoformat(new_api_video["published"]).date()
+        < date_after.date()
     ]
     assert expected_videos == [
         {
