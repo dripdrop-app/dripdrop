@@ -1,3 +1,5 @@
+from pydantic import ConfigDict
+
 from app.models import Response
 
 
@@ -6,12 +8,16 @@ class YoutubeChannelUpdateResponse(Response):
     updating: bool
 
 
-class YoutubeSubscriptionResponse(Response):
-    channel_id: str
-    channel_title: str
-    channel_thumbnail: str | None
+class YoutubeChannelResponse(Response):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    title: str
+    thumbnail: str | None
+    subscribed: bool
+    updating: bool
 
 
-class SubscriptionsResponse(Response):
-    subscriptions: list[YoutubeSubscriptionResponse]
+class YoutubeSubscriptionsResponse(Response):
+    channels: list[YoutubeChannelResponse]
     total_pages: int
