@@ -229,6 +229,7 @@ async def create_youtube_channel(db_session: AsyncSession, faker: Faker):
             title=title or faker.word(),
             last_videos_updated=last_videos_updated
             or faker.date_time(tzinfo=timezone.utc),
+            thumbnail=faker.image_url(),
         )
         db_session.add(channel)
         await db_session.commit()
