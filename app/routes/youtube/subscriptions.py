@@ -77,11 +77,11 @@ async def add_user_subscription(
         )
         if subscription := await db_session.scalar(query):
             if subscription.deleted_at is None:
-                raise HTTPException(
-                    detail="Subscription already exists.",
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                return YoutubeChannelResponse(
+                    subscribed=True, **subscription.channel.__dict__
                 )
             subscription.deleted_at = None
+            channel = subscription.channel
         else:
             query = select(YoutubeChannel).where(YoutubeChannel.id == channel_info.id)
             if not (channel := await db_session.scalar(query)):
@@ -101,7 +101,7 @@ async def add_user_subscription(
             db_session.add(subscription)
         await db_session.commit()
         background_tasks.add_task(add_channel_videos.delay, channel_id=channel.id)
-        return YoutubeChannelResponse.model_validate(subscription.channel)
+        return YoutubeChannelResponse(subscribed=True, **subscription.channel.__dict__)
     raise HTTPException(
         detail="Channel not found.",
         status_code=status.HTTP_400_BAD_REQUEST,
