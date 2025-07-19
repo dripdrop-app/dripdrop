@@ -177,3 +177,58 @@ async def test_add_user_subscription_with_existing_channel(
         )
     )
     assert subscription
+
+
+@pytest.mark.parametrize("use_function", [True, False])
+async def test_add_user_subscription_with_new_channel(
+    client,
+    monkeypatch,
+    create_and_login_user,
+    faker,
+    db_session,
+    use_function,
+):
+    """
+    Test adding a user subscription for a channel that the user is
+    already subscribed to. The endpoint should return a 200 status.
+    """
+
+    mock_get_channel_info = AsyncMock()
+    monkeypatch.setattr("app.services.google.get_channel_info", mock_get_channel_info)
+
+    mock_task = MagicMock()
+    monkeypatch.setattr("app.tasks.youtube.add_channel_videos.delay", mock_task)
+
+    user: User = await create_and_login_user()
+
+    channel_id = faker.uuid4()
+    channel_title = faker.word()
+    channel_thumbnail = faker.image_url()
+    mock_get_channel_info.return_value = google.YoutubeChannelInfo(
+        id=channel_id, title=channel_title, thumbnail=channel_thumbnail
+    )
+
+    if use_function:
+        background_tasks = BackgroundTasks()
+        await add_user_subscription(user, db_session, background_tasks, channel_id)
+        assert len(background_tasks.tasks) == 1
+        assert background_tasks.tasks[0].func == mock_task
+    else:
+        response = await client.put(URL, params={"channel_id": channel_id})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {
+            "id": channel_id,
+            "title": channel_title,
+            "thumbnail": channel_thumbnail,
+            "subscribed": True,
+            "updating": False,
+        }
+
+    subscription = await db_session.scalar(
+        select(YoutubeSubscription).where(
+            YoutubeSubscription.email == user.email,
+            YoutubeSubscription.channel_id == channel_id,
+            YoutubeSubscription.deleted_at.is_(None),
+        )
+    )
+    assert subscription
