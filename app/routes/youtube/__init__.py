@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, status
 from app.dependencies import get_authenticated_user
 from app.routes.youtube.channels import router as channels_router
 from app.routes.youtube.subscriptions import router as subscriptions_router
+from app.routes.youtube.video import router as videos_router
 
 router = APIRouter(
     prefix="/youtube",
@@ -12,3 +13,4 @@ router = APIRouter(
 )
 router.include_router(subscriptions_router)
 router.include_router(channels_router)
+router.include_router(videos_router)

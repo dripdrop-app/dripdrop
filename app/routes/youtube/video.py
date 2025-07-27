@@ -1,43 +1,30 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.authentication.dependencies import (
-    AuthenticatedUser,
-    get_authenticated_user,
-)
-from app.base.dependencies import DatabaseSession
-from app.youtube.models import (
-    YoutubeVideo,
-    YoutubeVideoLike,
-    YoutubeVideoQueue,
-    YoutubeVideoWatch,
-)
-from app.youtube.responses import (
-    ErrorMessages,
-    VideoResponse,
-    YoutubeVideoResponse,
-)
+from app.db import YoutubeVideo, YoutubeVideoLike, YoutubeVideoQueue, YoutubeVideoWatch
+from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
+from app.models.youtube import YoutubeVideoDetailResponse, YoutubeVideoResponse
 
-api = APIRouter(
-    prefix="/video/{video_id}",
-    tags=["Youtube Video"],
+router = APIRouter(
+    prefix="/videos",
+    tags=["Video"],
     dependencies=[Depends(get_authenticated_user)],
 )
 
 
-@api.get(
-    "",
-    response_model=VideoResponse,
-    responses={
-        status.HTTP_404_NOT_FOUND: {"description": ErrorMessages.VIDEO_NOT_FOUND}
-    },
+@router.get(
+    "/{video_id}",
+    response_model=YoutubeVideoDetailResponse,
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Youtube video not found."}},
 )
 async def get_youtube_video(
-    user: AuthenticatedUser,
-    session: DatabaseSession,
-    video_id: str = Path(...),
-    related_videos_length: int = Query(5, ge=0),
+    user: AuthUser,
+    db_session: DatabaseSession,
+    video_id: Annotated[str, Path()],
+    related_videos_length: Annotated[int, Query(5, ge=0)],
 ):
     query = (
         select(YoutubeVideo)
@@ -54,211 +41,170 @@ async def get_youtube_video(
             ),
         )
     )
-    video = await session.scalar(query)
-    if not video:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorMessages.VIDEO_NOT_FOUND,
+    if video := await db_session.scalar(query):
+        video = YoutubeVideoDetailResponse(
+            **video.__dict__,
+            channel_title=video.channel.title,
+            channel_thumbnail=video.channel.thumbnail,
+            category_name=video.category.name,
+            watched=video.watches[0].created_at if video.watches else None,
+            liked=video.likes[0].created_at if video.likes else None,
+            queued=video.queues[0].created_at if video.queues else None,
+            related_videos=[],
         )
-    video = YoutubeVideoResponse(
-        **video.__dict__,
-        channel_title=video.channel.title,
-        channel_thumbnail=video.channel.thumbnail,
-        category_name=video.category.name,
-        watched=video.watches[0].created_at if video.watches else None,
-        liked=video.likes[0].created_at if video.likes else None,
-        queued=video.queues[0].created_at if video.queues else None,
+        if related_videos_length > 0:
+            query = (
+                select(YoutubeVideo)
+                .where(
+                    YoutubeVideo.id != video.id,
+                    YoutubeVideo.category_id == video.category_id,
+                )
+                .order_by(YoutubeVideo.published_at.desc())
+                .limit(related_videos_length)
+                .options(
+                    joinedload(YoutubeVideo.channel),
+                    joinedload(YoutubeVideo.category),
+                    selectinload(
+                        YoutubeVideo.likes.and_(YoutubeVideoLike.email == user.email)
+                    ),
+                    selectinload(
+                        YoutubeVideo.watches.and_(YoutubeVideoWatch.email == user.email)
+                    ),
+                    selectinload(
+                        YoutubeVideo.queues.and_(YoutubeVideoQueue.email == user.email)
+                    ),
+                )
+            )
+            results = (await db_session.scalars(query)).all()
+            video.related_videos = [
+                YoutubeVideoResponse(
+                    **related_video.__dict__,
+                    channel_title=related_video.channel.title,
+                    channel_thumbnail=related_video.channel.thumbnail,
+                    category_name=related_video.category.name,
+                    watched=related_video.watches[0].created_at
+                    if related_video.watches
+                    else None,
+                    liked=related_video.likes[0].created_at
+                    if related_video.likes
+                    else None,
+                    queued=related_video.queues[0].created_at
+                    if related_video.queues
+                    else None,
+                )
+                for related_video in results
+            ]
+        return video
+    raise HTTPException(
+        detail="Youtube video not found.", status_code=status.HTTP_404_NOT_FOUND
     )
-    related_videos = []
-    if related_videos_length > 0:
-        query = (
-            select(YoutubeVideo)
-            .where(
-                YoutubeVideo.id != video.id,
-                YoutubeVideo.category_id == video.category_id,
-            )
-            .order_by(YoutubeVideo.published_at.desc())
-            .limit(related_videos_length)
-            .options(
-                joinedload(YoutubeVideo.channel),
-                joinedload(YoutubeVideo.category),
-                selectinload(
-                    YoutubeVideo.likes.and_(YoutubeVideoLike.email == user.email)
-                ),
-                selectinload(
-                    YoutubeVideo.watches.and_(YoutubeVideoWatch.email == user.email)
-                ),
-                selectinload(
-                    YoutubeVideo.queues.and_(YoutubeVideoQueue.email == user.email)
-                ),
-            )
-        )
-        results = await session.scalars(query)
-        related_videos = results.all()
-        related_videos = [
-            YoutubeVideoResponse(
-                **video.__dict__,
-                channel_title=video.channel.title,
-                channel_thumbnail=video.channel.thumbnail,
-                category_name=video.category.name,
-                watched=video.watches[0].created_at if video.watches else None,
-                liked=video.likes[0].created_at if video.likes else None,
-                queued=video.queues[0].created_at if video.queues else None,
-            )
-            for video in related_videos
-        ]
-    return VideoResponse(video=video, related_videos=related_videos)
 
 
-@api.put(
-    "/watch",
-    responses={
-        status.HTTP_404_NOT_FOUND: {"description": ErrorMessages.VIDEO_NOT_FOUND},
-        status.HTTP_400_BAD_REQUEST: {
-            "description": ErrorMessages.ADD_VIDEO_WATCH_ERROR
-        },
-    },
+@router.put(
+    "/{video_id}/watch",
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Youtube video not found."}},
 )
 async def add_youtube_video_watch(
-    user: AuthenticatedUser, session: DatabaseSession, video_id: str = Path(...)
+    user: AuthUser, db_session: DatabaseSession, video_id: Annotated[str, Path()]
 ):
     query = select(YoutubeVideo).where(YoutubeVideo.id == video_id)
-    video = await session.scalar(query)
-    if not video:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorMessages.VIDEO_NOT_FOUND,
+    if video := await db_session.scalar(query):
+        query = select(YoutubeVideoWatch).where(
+            YoutubeVideoWatch.email == user.email,
+            YoutubeVideoWatch.video_id == video_id,
         )
-    query = select(YoutubeVideoWatch).where(
-        YoutubeVideoWatch.email == user.email,
-        YoutubeVideoWatch.video_id == video_id,
+        if not await db_session.scalar(query):
+            db_session.add(YoutubeVideoWatch(email=user.email, video_id=video.id))
+            await db_session.commit()
+        return None
+    raise HTTPException(
+        detail="Youtube video not found.", status_code=status.HTTP_404_NOT_FOUND
     )
-    watch = await session.scalar(query)
-    if watch:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorMessages.ADD_VIDEO_WATCH_ERROR,
-        )
-    session.add(YoutubeVideoWatch(email=user.email, video_id=video_id))
-    await session.commit()
-    return Response(None, status_code=status.HTTP_200_OK)
 
 
-@api.put(
-    "/like",
-    responses={
-        status.HTTP_404_NOT_FOUND: {"description": ErrorMessages.VIDEO_NOT_FOUND},
-        status.HTTP_400_BAD_REQUEST: {
-            "description": ErrorMessages.ADD_VIDEO_LIKE_ERROR
-        },
-    },
+@router.put(
+    "/{video_id}/like",
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Youtube video not found."}},
 )
 async def add_youtube_video_like(
-    user: AuthenticatedUser, session: DatabaseSession, video_id: str = Path(...)
+    user: AuthUser, db_session: DatabaseSession, video_id: Annotated[str, Path()]
 ):
     query = select(YoutubeVideo).where(YoutubeVideo.id == video_id)
-    video = await session.scalar(query)
-    if not video:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorMessages.VIDEO_NOT_FOUND,
+    if video := await db_session.scalar(query):
+        query = select(YoutubeVideoLike).where(
+            YoutubeVideoLike.email == user.email,
+            YoutubeVideoLike.video_id == video_id,
         )
-    query = select(YoutubeVideoLike).where(
-        YoutubeVideoLike.email == user.email,
-        YoutubeVideoLike.video_id == video_id,
+        if not await db_session.scalar(query):
+            db_session.add(YoutubeVideoLike(email=user.email, video_id=video.id))
+            await db_session.commit()
+        return None
+    raise HTTPException(
+        detail="Youtube video not found.", status_code=status.HTTP_404_NOT_FOUND
     )
-    like = await session.scalar(query)
-    if like:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorMessages.ADD_VIDEO_LIKE_ERROR,
-        )
-    session.add(YoutubeVideoLike(email=user.email, video_id=video_id))
-    await session.commit()
-    return Response(None, status_code=status.HTTP_200_OK)
 
 
-@api.delete(
-    "/like",
+@router.delete(
+    "/{video_id}/like",
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "description": ErrorMessages.REMOVE_VIDEO_LIKE_ERROR
-        }
+        status.HTTP_404_NOT_FOUND: {"description": "Youtube video like not found."}
     },
 )
 async def delete_youtube_video_like(
-    user: AuthenticatedUser, session: DatabaseSession, video_id: str = Path(...)
+    user: AuthUser, session: DatabaseSession, video_id: Annotated[str, Path()]
 ):
     query = select(YoutubeVideoLike).where(
         YoutubeVideoLike.email == user.email,
         YoutubeVideoLike.video_id == video_id,
     )
-    like = await session.scalar(query)
-    if not like:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorMessages.REMOVE_VIDEO_LIKE_ERROR,
-        )
-    await session.delete(like)
-    await session.commit()
-    return Response(None, status_code=status.HTTP_200_OK)
+    if like := await session.scalar(query):
+        await session.delete(like)
+        await session.commit()
+        return None
+    raise HTTPException(
+        detail="Youtube video like not found.", status_code=status.HTTP_404_NOT_FOUND
+    )
 
 
-@api.put(
-    "/queue",
-    responses={
-        status.HTTP_404_NOT_FOUND: {"description": ErrorMessages.VIDEO_NOT_FOUND},
-        status.HTTP_400_BAD_REQUEST: {
-            "description": ErrorMessages.ADD_VIDEO_QUEUE_ERROR
-        },
-    },
+@router.put(
+    "/{video_id}/queue",
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Youtube video not found."}},
 )
 async def add_youtube_video_queue(
-    user: AuthenticatedUser, session: DatabaseSession, video_id: str = Path(...)
+    user: AuthUser, db_session: DatabaseSession, video_id: Annotated[str, Path()]
 ):
     query = select(YoutubeVideo).where(YoutubeVideo.id == video_id)
-    video = await session.scalar(query)
-    if not video:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorMessages.VIDEO_NOT_FOUND,
+    if video := await db_session.scalar(query):
+        query = select(YoutubeVideoQueue).where(
+            YoutubeVideoQueue.email == user.email,
+            YoutubeVideoQueue.video_id == video_id,
         )
-    query = select(YoutubeVideoQueue).where(
-        YoutubeVideoQueue.video_id == video_id,
-        YoutubeVideoQueue.email == user.email,
+        if not await db_session.scalar(query):
+            db_session.add(YoutubeVideoQueue(email=user.email, video_id=video.id))
+            await db_session.commit()
+        return None
+    raise HTTPException(
+        detail="Youtube video not found.", status_code=status.HTTP_404_NOT_FOUND
     )
-    video_queue = await session.scalar(query)
-    if video_queue:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorMessages.ADD_VIDEO_QUEUE_ERROR,
-        )
-    session.add(YoutubeVideoQueue(email=user.email, video_id=video_id))
-    await session.commit()
-    return Response(None, status_code=status.HTTP_200_OK)
 
 
-@api.delete(
-    "/queue",
+@router.delete(
+    "/{video_id}/queue",
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "description": ErrorMessages.REMOVE_VIDEO_QUEUE_ERROR
-        }
+        status.HTTP_404_NOT_FOUND: {"description": "Youtube video queue not found."}
     },
 )
 async def delete_youtube_video_queue(
-    user: AuthenticatedUser, session: DatabaseSession, video_id: str = Path(...)
+    user: AuthUser, db_session: DatabaseSession, video_id: Annotated[str, Path()]
 ):
-    query = select(YoutubeVideoQueue).where(
-        YoutubeVideoQueue.email == user.email,
-        YoutubeVideoQueue.video_id == video_id,
+    query = select(YoutubeVideoLike).where(
+        YoutubeVideoLike.email == user.email,
+        YoutubeVideoLike.video_id == video_id,
     )
-    queue = await session.scalar(query)
-    if not queue:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorMessages.REMOVE_VIDEO_QUEUE_ERROR,
-        )
-    await session.delete(queue)
-    await session.commit()
-    return Response(None, status_code=status.HTTP_200_OK)
+    if queued := await db_session.scalar(query):
+        await db_session.delete(queued)
+        await db_session.commit()
+        return None
+    raise HTTPException(
+        detail="Youtube video queue not found.", status_code=status.HTTP_404_NOT_FOUND
+    )
