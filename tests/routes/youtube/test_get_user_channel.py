@@ -27,6 +27,7 @@ async def test_get_user_channel_that_does_not_exist(
     """
 
     user: User = await create_and_login_user()
+
     if use_function:
         with pytest.raises(HTTPException):
             await get_user_youtube_channel(user, db_session)
@@ -49,6 +50,7 @@ async def test_get_user_channel(
     user_channel = YoutubeUserChannel(id=faker.uuid4(), email=user.email)
     db_session.add(user_channel)
     await db_session.commit()
+
     if use_function:
         response = await get_user_youtube_channel(user, db_session)
         json = response.model_dump()
