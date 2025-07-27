@@ -79,14 +79,14 @@ async def update_user_youtube_channel(
     user: AuthUser,
     db_session: DatabaseSession,
     background_tasks: BackgroundTasks,
-    channel_id: Annotated[str, Body()],
+    channel_id: Annotated[str, Body(embed=True)],
 ):
     if channel_info := await google.get_channel_info(channel_id=channel_id):
         query = select(YoutubeUserChannel).where(YoutubeUserChannel.email == user.email)
         if user_channel := await db_session.scalar(query):
             current_time = datetime.now(timezone.utc)
             time_elasped = current_time - user_channel.modified_at
-            if time_elasped < 1:
+            if time_elasped.days < 1:
                 raise HTTPException(
                     detail="Must wait 24 hours before updating channel id.",
                     status_code=status.HTTP_400_BAD_REQUEST,
