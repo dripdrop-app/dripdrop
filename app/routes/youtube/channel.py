@@ -1,113 +1,114 @@
-import asyncio
+from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Body,
     Depends,
     HTTPException,
     Path,
-    Response,
     WebSocket,
+    WebSocketDisconnect,
     status,
 )
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-import app.utils as dripdrop_utils
-from app.authentication.dependencies import (
-    AuthenticatedUser,
-    get_authenticated_user,
-)
-from app.base.dependencies import DatabaseSession
-from app.services import google_api, rq_client
-from app.services.websocket_channel import RedisChannels, WebsocketChannel
-from app.youtube import tasks
-from app.youtube.models import (
-    YoutubeChannel,
-    YoutubeSubscription,
-    YoutubeUserChannel,
-)
-from app.youtube.responses import (
-    ErrorMessages,
-    YoutubeChannelResponse,
-    YoutubeChannelUpdateResponse,
-    YoutubeUserChannelResponse,
-)
+from app.db import YoutubeChannel, YoutubeSubscription, YoutubeUserChannel
+from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
+from app.models.youtube import YoutubeChannelResponse, YoutubeChannelUpdateResponse
+from app.services import google
+from app.services.pubsub import PubSub
+from app.tasks import youtube
 
-api = APIRouter(
+router = APIRouter(
     prefix="/channel",
-    tags=["YouTube Channel"],
+    tags=["Channel"],
     dependencies=[Depends(get_authenticated_user)],
 )
 
 
-@api.websocket("/listen")
-async def listen_channels(websocket: WebSocket):
-    async def handler(msg):
-        await websocket.send_json(
-            YoutubeChannelUpdateResponse.model_validate_json(msg).model_dump()
-        )
-
-    await WebsocketChannel(channel=RedisChannels.YOUTUBE_CHANNEL_UPDATE).listen(
-        websocket=websocket, handler=handler
-    )
-
-
-@api.get(
-    "/user",
-    response_model=YoutubeUserChannelResponse,
-    responses={status.HTTP_404_NOT_FOUND: {}},
-)
-async def get_user_youtube_channel(user: AuthenticatedUser, session: DatabaseSession):
-    query = select(YoutubeUserChannel).where(YoutubeUserChannel.email == user.email)
-    user_channel = await session.scalar(query)
-    if not user_channel:
-        raise HTTPException(
-            detail=ErrorMessages.CHANNEL_NOT_FOUND,
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-    return YoutubeUserChannelResponse(id=user_channel.id)
-
-
-@api.post("/user", responses={status.HTTP_400_BAD_REQUEST: {}})
-async def update_user_youtube_channel(
-    user: AuthenticatedUser,
-    session: DatabaseSession,
-    channel_id: str = Body(..., embed=True),
+@router.websocket("/listen")
+async def listen_channels(
+    user: AuthUser, websocket: WebSocket, db_session: DatabaseSession
 ):
-    channel_info = await google_api.get_channel_info(channel_id=channel_id)
-    if not channel_info:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorMessages.CHANNEL_NOT_FOUND,
-        )
+    await websocket.accept()
+    subscriber = PubSub(channels=[PubSub.Channels.YOUTUBE_CHANNEL_UPDATE])
+    try:
+        async for message in subscriber.listen(ignore_subscribe_messages=True):
+            if message:
+                parsed_message = YoutubeChannelUpdateResponse.model_validate_json(
+                    message["message"]
+                )
+                channel_id = parsed_message.id
+                query = select(YoutubeSubscription).where(
+                    YoutubeSubscription.channel_id == channel_id,
+                    YoutubeSubscription.email == user.email,
+                )
+                if await db_session.scalar(query):
+                    await websocket.send_json(parsed_message)
+            await websocket.send_json({"status": "PING"})
+    except WebSocketDisconnect:
+        await subscriber.stop_listening()
+
+
+@router.get(
+    "/user",
+    response_model=YoutubeChannelResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Youtube Channel not found."}
+    },
+)
+async def get_user_youtube_channel(user: AuthUser, db_session: DatabaseSession):
     query = select(YoutubeUserChannel).where(YoutubeUserChannel.email == user.email)
-    user_channel = await session.scalar(query)
-    if user_channel:
-        current_time = dripdrop_utils.get_current_time()
-        time_elasped = current_time - user_channel.modified_at
-        if time_elasped.days < 1:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ErrorMessages.WAIT_TO_UPDATE_CHANNEL,
-            )
-        user_channel.id = channel_info.id
-    else:
-        session.add(YoutubeUserChannel(id=channel_info.id, email=user.email))
-    await session.commit()
-    await asyncio.to_thread(
-        rq_client.default.enqueue, tasks.update_user_subscriptions, email=user.email
+    if user_channel := await db_session.scalar(query):
+        return YoutubeChannelResponse(id=user_channel.id)
+    raise HTTPException(
+        detail="Youtube Channel not found.",
+        status_code=status.HTTP_404_NOT_FOUND,
     )
-    return Response(None, status_code=status.HTTP_200_OK)
 
 
-@api.get(
+@router.post("/user", responses={status.HTTP_400_BAD_REQUEST: {}})
+async def update_user_youtube_channel(
+    user: AuthUser,
+    db_session: DatabaseSession,
+    background_tasks: BackgroundTasks,
+    channel_id: Annotated[str, Body()],
+):
+    if channel_info := await google.get_channel_info(channel_id=channel_id):
+        query = select(YoutubeUserChannel).where(YoutubeUserChannel.email == user.email)
+        if user_channel := await db_session.scalar(query):
+            current_time = datetime.now(timezone.utc)
+            time_elasped = current_time - user_channel.modified_at
+            if time_elasped < 1:
+                raise HTTPException(
+                    detail="Must wait 24 hours before updating channel id.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            user_channel.id = channel_info.id
+        else:
+            db_session.add(YoutubeUserChannel(id=channel_info.id, email=user.email))
+        await db_session.commit()
+        background_tasks.add_task(
+            youtube.update_user_subscriptions.delay, email=user.email
+        )
+        return None
+    raise HTTPException(
+        detail="Youtube Channel not found.", status_code=status.HTTP_400_BAD_REQUEST
+    )
+
+
+@router.get(
     "/{channel_id}",
     response_model=YoutubeChannelResponse,
-    responses={status.HTTP_404_NOT_FOUND: {}},
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Youtube Channel not found."}
+    },
 )
 async def get_youtube_channel(
-    user: AuthenticatedUser, session: DatabaseSession, channel_id: str = Path(...)
+    user: AuthUser, db_session: DatabaseSession, channel_id: Annotated[str, Path()]
 ):
     query = (
         select(YoutubeChannel)
@@ -121,17 +122,16 @@ async def get_youtube_channel(
             )
         )
     )
-    results = await session.execute(query)
-    channel = results.scalar()
-    if not channel:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorMessages.CHANNEL_NOT_FOUND,
+    if channel := await db_session.scalar(query):
+        return YoutubeChannelResponse(
+            id=channel.id,
+            title=channel.title,
+            thumbnail=channel.thumbnail,
+            subscribed=bool(
+                channel.subscriptions[0] if channel.subscriptions else False
+            ),
+            updating=channel.updating,
         )
-    return YoutubeChannelResponse(
-        id=channel.id,
-        title=channel.title,
-        thumbnail=channel.thumbnail,
-        subscribed=bool(channel.subscriptions[0] if channel.subscriptions else False),
-        updating=channel.updating,
+    raise HTTPException(
+        detail="Youtube Channel not found.", status_code=status.HTTP_404_NOT_FOUND
     )
