@@ -18,11 +18,6 @@ class YoutubeChannelResponse(ResponseBaseModel):
     updating: bool
 
 
-class YoutubeVideoCategoryResponse(ResponseBaseModel):
-    id: int
-    name: str
-
-
 class YoutubeVideoCategoriesResponse(ResponseBaseModel):
     categories: list[YoutubeVideoCategoryResponse]
 

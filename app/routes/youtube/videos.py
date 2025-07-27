@@ -24,7 +24,7 @@ async def get_youtube_video(
     user: AuthUser,
     db_session: DatabaseSession,
     video_id: Annotated[str, Path()],
-    related_videos_length: Annotated[int, Query(5, ge=0)],
+    related_videos_length: Annotated[int, Query(ge=0)] = 5,
 ):
     query = (
         select(YoutubeVideo)
@@ -42,22 +42,19 @@ async def get_youtube_video(
         )
     )
     if video := await db_session.scalar(query):
-        video = YoutubeVideoDetailResponse(
-            **video.__dict__,
-            channel_title=video.channel.title,
-            channel_thumbnail=video.channel.thumbnail,
-            category_name=video.category.name,
-            watched=video.watches[0].created_at if video.watches else None,
-            liked=video.likes[0].created_at if video.likes else None,
-            queued=video.queues[0].created_at if video.queues else None,
-            related_videos=[],
-        )
+        watched = video.watches[0].created_at if video.watches else None
+        liked = video.likes[0].created_at if video.likes else None
+        queued = video.queues[0].created_at if video.queues else None
+        video = YoutubeVideoDetailResponse.model_validate(video)
+        video.watched = watched
+        video.liked = liked
+        video.queued = queued
         if related_videos_length > 0:
             query = (
                 select(YoutubeVideo)
                 .where(
                     YoutubeVideo.id != video.id,
-                    YoutubeVideo.category_id == video.category_id,
+                    YoutubeVideo.category_id == video.category.id,
                 )
                 .order_by(YoutubeVideo.published_at.desc())
                 .limit(related_videos_length)
@@ -76,24 +73,23 @@ async def get_youtube_video(
                 )
             )
             results = (await db_session.scalars(query)).all()
-            video.related_videos = [
-                YoutubeVideoResponse(
-                    **related_video.__dict__,
-                    channel_title=related_video.channel.title,
-                    channel_thumbnail=related_video.channel.thumbnail,
-                    category_name=related_video.category.name,
-                    watched=related_video.watches[0].created_at
+            for related_video in results:
+                watched = (
+                    related_video.watches[0].created_at
                     if related_video.watches
-                    else None,
-                    liked=related_video.likes[0].created_at
-                    if related_video.likes
-                    else None,
-                    queued=related_video.queues[0].created_at
-                    if related_video.queues
-                    else None,
+                    else None
                 )
-                for related_video in results
-            ]
+                liked = (
+                    related_video.likes[0].created_at if related_video.likes else None
+                )
+                queued = (
+                    related_video.queues[0].created_at if related_video.queues else None
+                )
+                related_video = YoutubeVideoResponse.model_validate(related_video)
+                related_video.watched = watched
+                related_video.liked = liked
+                related_video.queued = queued
+                video.related_videos.append(related_video)
         return video
     raise HTTPException(
         detail="Youtube video not found.", status_code=status.HTTP_404_NOT_FOUND

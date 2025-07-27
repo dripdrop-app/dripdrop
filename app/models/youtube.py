@@ -29,17 +29,25 @@ class YoutubeUserChannelResponse(Response):
     id: str
 
 
+class YoutubeVideoCategoryResponse(Response):
+    id: int
+    name: str
+
+
+class YoutubeVideoChannelResponse(Response):
+    id: str
+    title: str
+    thumbnail: str
+
+
 class YoutubeVideoResponse(Response):
     id: str
     title: str
     thumbnail: str
-    category_id: int
-    category_name: str
+    category: YoutubeVideoCategoryResponse
     published_at: datetime
     description: str | None = None
-    channel_id: str
-    channel_title: str
-    channel_thumbnail: str
+    channel: YoutubeVideoChannelResponse
     liked: datetime | None = None
     queued: datetime | None = None
     watched: datetime | None = None
@@ -51,5 +59,4 @@ class YoutubeVideosResponse(Response):
 
 
 class YoutubeVideoDetailResponse(YoutubeVideoResponse):
-    video: YoutubeVideoResponse
-    related_videos: list[YoutubeVideoResponse]
+    related_videos: list[YoutubeVideoResponse] = []
