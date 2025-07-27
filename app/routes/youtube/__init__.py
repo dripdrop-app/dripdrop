@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 
 from app.dependencies import get_authenticated_user
-from app.routes.youtube.channel import router as channels_router
+from app.routes.youtube.channels import router as channels_router
 from app.routes.youtube.subscriptions import router as subscriptions_router
 
 router = APIRouter(

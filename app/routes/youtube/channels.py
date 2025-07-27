@@ -17,13 +17,17 @@ from sqlalchemy.orm import joinedload
 
 from app.db import YoutubeChannel, YoutubeSubscription, YoutubeUserChannel
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
-from app.models.youtube import YoutubeChannelResponse, YoutubeChannelUpdateResponse
+from app.models.youtube import (
+    YoutubeChannelResponse,
+    YoutubeChannelUpdateResponse,
+    YoutubeUserChannelResponse,
+)
 from app.services import google
 from app.services.pubsub import PubSub
 from app.tasks import youtube
 
 router = APIRouter(
-    prefix="/channel",
+    prefix="/channels",
     tags=["Channel"],
     dependencies=[Depends(get_authenticated_user)],
 )
@@ -55,7 +59,7 @@ async def listen_channels(
 
 @router.get(
     "/user",
-    response_model=YoutubeChannelResponse,
+    response_model=YoutubeUserChannelResponse,
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Youtube Channel not found."}
     },
@@ -63,7 +67,7 @@ async def listen_channels(
 async def get_user_youtube_channel(user: AuthUser, db_session: DatabaseSession):
     query = select(YoutubeUserChannel).where(YoutubeUserChannel.email == user.email)
     if user_channel := await db_session.scalar(query):
-        return YoutubeChannelResponse(id=user_channel.id)
+        return YoutubeUserChannelResponse(id=user_channel.id)
     raise HTTPException(
         detail="Youtube Channel not found.",
         status_code=status.HTTP_404_NOT_FOUND,

@@ -21,3 +21,7 @@ class YoutubeChannelResponse(Response):
 class YoutubeSubscriptionsResponse(Response):
     channels: list[YoutubeChannelResponse]
     total_pages: int
+
+
+class YoutubeUserChannelResponse(Response):
+    id: str
