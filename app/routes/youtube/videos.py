@@ -193,9 +193,9 @@ async def add_youtube_video_queue(
 async def delete_youtube_video_queue(
     user: AuthUser, db_session: DatabaseSession, video_id: Annotated[str, Path()]
 ):
-    query = select(YoutubeVideoLike).where(
-        YoutubeVideoLike.email == user.email,
-        YoutubeVideoLike.video_id == video_id,
+    query = select(YoutubeVideoQueue).where(
+        YoutubeVideoQueue.email == user.email,
+        YoutubeVideoQueue.video_id == video_id,
     )
     if queued := await db_session.scalar(query):
         await db_session.delete(queued)
