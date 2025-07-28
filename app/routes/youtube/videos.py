@@ -147,15 +147,15 @@ async def add_youtube_video_like(
     },
 )
 async def delete_youtube_video_like(
-    user: AuthUser, session: DatabaseSession, video_id: Annotated[str, Path()]
+    user: AuthUser, db_session: DatabaseSession, video_id: Annotated[str, Path()]
 ):
     query = select(YoutubeVideoLike).where(
         YoutubeVideoLike.email == user.email,
         YoutubeVideoLike.video_id == video_id,
     )
-    if like := await session.scalar(query):
-        await session.delete(like)
-        await session.commit()
+    if like := await db_session.scalar(query):
+        await db_session.delete(like)
+        await db_session.commit()
         return None
     raise HTTPException(
         detail="Youtube video like not found.", status_code=status.HTTP_404_NOT_FOUND
