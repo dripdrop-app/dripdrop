@@ -14,6 +14,7 @@ from sqlalchemy.orm import joinedload
 
 from app.db import YoutubeChannel, YoutubeSubscription
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
+from app.models import Pagination
 from app.models.youtube import YoutubeChannelResponse, YoutubeSubscriptionsResponse
 from app.services import google
 from app.tasks.youtube import add_channel_videos
@@ -30,8 +31,7 @@ router = APIRouter(
 async def get_youtube_subscriptions(
     user: AuthUser,
     db_session: DatabaseSession,
-    page: Annotated[int, Query(..., ge=1)],
-    per_page: Annotated[int, Query(..., le=50)],
+    query_params: Annotated[Pagination, Query()],
 ):
     query = (
         select(YoutubeSubscription)
@@ -44,7 +44,10 @@ async def get_youtube_subscriptions(
         .options(joinedload(YoutubeSubscription.channel))
     )
     paginated_results = await query_with_pagination(
-        db_session=db_session, query=query, page=page, per_page=per_page
+        db_session=db_session,
+        query=query,
+        page=query_params.page,
+        per_page=query_params.per_page,
     )
     return YoutubeSubscriptionsResponse(
         channels=[

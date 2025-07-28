@@ -22,6 +22,7 @@ from sqlalchemy import select
 
 from app.db import MusicFile, MusicJob
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
+from app.models import Pagination
 from app.models.music import (
     CreateMusicJob,
     MusicJobListResponse,
@@ -136,8 +137,7 @@ async def download_job(
 async def get_jobs(
     user: AuthUser,
     db_session: DatabaseSession,
-    page: Annotated[int, Query(..., ge=1)],
-    per_page: Annotated[int, Query(..., le=50, gt=0)],
+    query_params: Annotated[Pagination, Query()],
 ):
     query = (
         select(MusicJob)
@@ -145,7 +145,10 @@ async def get_jobs(
         .order_by(MusicJob.created_at.desc())
     )
     paginated_results = await query_with_pagination(
-        db_session=db_session, query=query, page=page, per_page=per_page
+        db_session=db_session,
+        query=query,
+        page=query_params.page,
+        per_page=query_params.per_page,
     )
     return MusicJobListResponse(
         jobs=paginated_results.results, total_pages=paginated_results.total_pages
