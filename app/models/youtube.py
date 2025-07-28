@@ -1,8 +1,9 @@
 from datetime import datetime
+from typing import Optional
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
-from app.models import Response
+from app.models import Pagination, Response
 
 
 class YoutubeChannelUpdateResponse(Response):
@@ -60,3 +61,14 @@ class YoutubeVideosResponse(Response):
 
 class YoutubeVideoDetailResponse(YoutubeVideoResponse):
     related_videos: list[YoutubeVideoResponse] = []
+
+
+class YoutubeVideoCategoriesResponse(Response):
+    categories: list[YoutubeVideoCategoryResponse]
+
+
+class GetVideos(Pagination):
+    video_categories: Optional[list[int]] = Field([])
+    channel_id: Optional[str] = Field(None)
+    liked_only: Optional[bool] = Field(False)
+    queued_only: Optional[bool] = Field(False)

@@ -4,9 +4,24 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.db import YoutubeVideo, YoutubeVideoLike, YoutubeVideoQueue, YoutubeVideoWatch
+from app.db import (
+    YoutubeChannel,
+    YoutubeSubscription,
+    YoutubeVideo,
+    YoutubeVideoCategory,
+    YoutubeVideoLike,
+    YoutubeVideoQueue,
+    YoutubeVideoWatch,
+)
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
-from app.models.youtube import YoutubeVideoDetailResponse, YoutubeVideoResponse
+from app.models.youtube import (
+    GetVideos,
+    YoutubeVideoCategoriesResponse,
+    YoutubeVideoDetailResponse,
+    YoutubeVideoResponse,
+    YoutubeVideosResponse,
+)
+from app.utils.database import query_with_pagination
 
 router = APIRouter(
     prefix="/videos",
@@ -203,4 +218,81 @@ async def delete_youtube_video_queue(
         return None
     raise HTTPException(
         detail="Youtube video queue not found.", status_code=status.HTTP_404_NOT_FOUND
+    )
+
+
+@router.get("/categories", response_model=YoutubeVideoCategoriesResponse)
+async def get_youtube_video_categories(session: DatabaseSession):
+    query = (
+        select(YoutubeVideoCategory)
+        .order_by(YoutubeVideoCategory.name.asc())
+        .distinct()
+    )
+    categories = (await session.execute(query)).all()
+    return YoutubeVideoCategoriesResponse(categories=categories)
+
+
+@router.get("/list", response_model=YoutubeVideosResponse)
+async def get_youtube_videos(
+    user: AuthUser,
+    db_session: DatabaseSession,
+    query_params: Annotated[GetVideos, Query()],
+):
+    query = select(YoutubeVideo)
+    if query_params.channel_id:
+        query = query.where(YoutubeVideo.channel_id == query_params.channel_id)
+    else:
+        if not query_params.queued_only and not query_params.liked_only:
+            query = query.where(
+                YoutubeVideo.channel_id.in_(
+                    select(YoutubeChannel.id)
+                    .join(YoutubeSubscription)
+                    .where(
+                        YoutubeSubscription.email == user.email,
+                        YoutubeSubscription.deleted_at.is_(None),
+                    )
+                )
+            )
+    if query_params.video_categories:
+        query = query.where(YoutubeVideo.category_id.in_(query_params.video_categories))
+    if query_params.liked_only:
+        query = (
+            query.join(YoutubeVideoLike)
+            .where(YoutubeVideoLike.email == user.email)
+            .order_by(YoutubeVideoLike.created_at.desc())
+        )
+    elif query_params.queued_only:
+        query = (
+            query.join(YoutubeVideoQueue)
+            .where(YoutubeVideoQueue.email == user.email)
+            .order_by(YoutubeVideoQueue.created_at.asc())
+        )
+    else:
+        query = query.order_by(YoutubeVideo.published_at.desc())
+    query = query.order_by(YoutubeVideo.title.desc())
+    query = query.options(
+        joinedload(YoutubeVideo.channel),
+        joinedload(YoutubeVideo.category),
+        selectinload(YoutubeVideo.likes.and_(YoutubeVideoLike.email == user.email)),
+        selectinload(YoutubeVideo.queues.and_(YoutubeVideoQueue.email == user.email)),
+        selectinload(YoutubeVideo.watches.and_(YoutubeVideoWatch.email == user.email)),
+    )
+    paginated_results = await query_with_pagination(
+        db_session=db_session,
+        query=query,
+        page=query_params.page,
+        per_page=query_params.per_page,
+    )
+    videos = []
+    for result in paginated_results.results:
+        watched = result.watches[0].created_at if result.watches else None
+        liked = result.likes[0].created_at if result.likes else None
+        queued = result.queues[0].created_at if result.queues else None
+        video_result = YoutubeVideoResponse.model_validate(result)
+        video_result.watched = watched
+        video_result.liked = liked
+        video_result.queued = queued
+        videos.append(video_result)
+    return YoutubeVideosResponse(
+        videos=videos, total_pages=paginated_results.total_pages
     )
