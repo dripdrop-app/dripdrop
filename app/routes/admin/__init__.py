@@ -56,5 +56,5 @@ async def run_update_channel_videos(
 
 @router.get("/youtube/update_video_categories")
 async def run_update_video_categories(background_tasks: BackgroundTasks):
-    background_tasks.add_task(youtube.update_video_categories)
+    background_tasks.add_task(youtube.update_video_categories.delay)
     return Response(None, status_code=status.HTTP_200_OK)
