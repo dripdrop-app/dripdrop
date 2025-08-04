@@ -42,10 +42,14 @@ async def run_update_channel_videos(
     ] = None,
 ):
     if not channel_id:
-        background_tasks.add_task(youtube.update_channel_videos, date_after=date_after)
+        background_tasks.add_task(
+            youtube.update_channel_videos.delay, date_after=date_after
+        )
     else:
         background_tasks.add_task(
-            youtube.add_channel_videos, channel_id=channel_id, date_after=date_after
+            youtube.add_channel_videos.delay,
+            channel_id=channel_id,
+            date_after=date_after,
         )
     return Response(None, status_code=status.HTTP_200_OK)
 
