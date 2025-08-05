@@ -84,5 +84,5 @@ async def test_add_video_like_with_existing_like(
     response = await client.put(URL.format(video_id=video.id))
     assert response.status_code == status.HTTP_200_OK
 
-    db_session.refresh(like)
+    await db_session.refresh(like)
     assert original_like_time == like.created_at

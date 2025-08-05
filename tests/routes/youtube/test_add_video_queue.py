@@ -84,5 +84,5 @@ async def test_add_video_queue_with_existing_queue(
     response = await client.put(URL.format(video_id=video.id))
     assert response.status_code == status.HTTP_200_OK
 
-    db_session.refresh(queue)
+    await db_session.refresh(queue)
     assert original_queue_time == queue.created_at

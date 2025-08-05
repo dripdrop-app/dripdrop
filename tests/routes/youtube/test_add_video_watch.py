@@ -84,5 +84,5 @@ async def test_add_video_watch_with_existing_watch(
     response = await client.put(URL.format(video_id=video.id))
     assert response.status_code == status.HTTP_200_OK
 
-    db_session.refresh(watch)
+    await db_session.refresh(watch)
     assert original_watch_time == watch.created_at
