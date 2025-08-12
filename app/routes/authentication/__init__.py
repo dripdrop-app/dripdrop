@@ -76,7 +76,7 @@ async def login(db_session: DatabaseSession, body: Annotated[LoginUser, Body()])
     raise HTTPException(detail="User not found.", status_code=status.HTTP_404_NOT_FOUND)
 
 
-@router.get(
+@router.delete(
     "/logout",
     dependencies=[Depends(get_authenticated_user)],
     status_code=status.HTTP_204_NO_CONTENT,

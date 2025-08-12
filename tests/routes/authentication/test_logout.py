@@ -12,7 +12,7 @@ async def test_logout_when_not_logged_in(client):
     return a 401 error.
     """
 
-    response = await client.get(URL)
+    response = await client.delete(URL)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -30,6 +30,6 @@ async def test_logout_when_logged_in(client, create_and_login_user, use_function
         assert response.status_code == status.HTTP_200_OK
         assert response.headers.get("set-cookie") is not None
     else:
-        response = await client.get(URL)
+        response = await client.delete(URL)
         assert response.status_code == status.HTTP_200_OK
         assert client.cookies.get("token") in ["null", None]
