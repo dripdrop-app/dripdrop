@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from app.models import Pagination, Response
 
@@ -72,3 +72,10 @@ class GetVideos(Pagination):
     channel_id: Optional[str] = Field(None)
     liked_only: Optional[bool] = Field(False)
     queued_only: Optional[bool] = Field(False)
+
+    @field_validator("video_categories", mode="before")
+    @classmethod
+    def validate_categories(cls, value: list):
+        categories = value[0].split(",") if value else []
+        new_value = [int(c) for c in categories if c]
+        return new_value
