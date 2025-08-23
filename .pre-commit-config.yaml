@@ -9,7 +9,7 @@ repos:
           - --select
           - I
           - --fix
-          - --exclude=client
+          - --exclude=client/
       # Run the formatter.
       - id: ruff-format
   - repo: https://github.com/commitizen-tools/commitizen
