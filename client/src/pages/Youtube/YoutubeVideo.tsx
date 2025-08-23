@@ -13,8 +13,11 @@ const YoutubeVideo = () => {
 
   const videoStatus = useYoutubeVideoQuery({ videoId: id || "", relatedVideosLength: 4 }, { skip: !id });
 
-  const { video, relatedVideos } = useMemo(
-    () => (videoStatus.data ? videoStatus.data : { video: null, relatedVideos: null }),
+  const { relatedVideos, video } = useMemo(
+    () =>
+      videoStatus.data
+        ? { relatedVideos: videoStatus.data.relatedVideos, video: videoStatus.data }
+        : { video: null, relatedVideos: null },
     [videoStatus.data]
   );
 
