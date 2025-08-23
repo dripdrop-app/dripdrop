@@ -8,9 +8,15 @@ create-migration:
 migrate:
 	uv run alembic -c app/db/alembic.ini upgrade head
 
-.PHONY: install
-install:
+.PHONY: install-server
+install-server:
 	uv sync && uv run pre-commit install
+
+.PHONY: install-client
+install-client:
+	cd client && npm install
+
+install: install-server install-client
 
 .PHONY: lint
 lint:
@@ -24,9 +30,13 @@ test:
 test-fast:
 	ENV=testing uv run pytest tests -m "not long"
 
-.PHONY: run-dev
-run-dev:
+.PHONY: run-server-dev
+run-server-dev:
 	docker compose --profile dev up -d && uv run fastapi dev app
+
+.PHONY: run-client-dev
+run-client-dev:
+	cd client && npm run dev
 
 # Replace with celery command
 # .PHONY: worker-dev
