@@ -1,0 +1,33 @@
+export const Tags = {
+  MUSIC_JOB: "MusicJob",
+  MUSIC_GROUPING: "MusicGrouping",
+  MUSIC_ARTWORK: "MusicArtwork",
+  MUSIC_TAGS: "MusicTags",
+  MUSIC_DOWNLOAD: "MusicDownload",
+  YOUTUBE_CHANNEL: "YoutubeChannel",
+  YOUTUBE_USER_CHANNEL: "YoutubeUserChannel",
+  YOUTUBE_CHANNEL_VIDEOS: "YoutubeChannelVideos",
+  YOUTUBE_SUBSCRIPTION: "YoutubeSubscription",
+  YOUTUBE_VIDEO: "YoutubeVideo",
+  YOUTUBE_VIDEO_CATEGORY: "YoutubeVideoCategory",
+  YOUTUBE_LIKE_VIDEOS: "YoutubeLikeVideos",
+  YOUTUBE_QUEUE_VIDEOS: "YoutubeQueueVideos",
+  USER: "User",
+};
+
+export const tags = [
+  Tags.MUSIC_ARTWORK,
+  Tags.MUSIC_DOWNLOAD,
+  Tags.MUSIC_GROUPING,
+  Tags.MUSIC_JOB,
+  Tags.MUSIC_TAGS,
+  Tags.YOUTUBE_CHANNEL,
+  Tags.YOUTUBE_USER_CHANNEL,
+  Tags.YOUTUBE_CHANNEL_VIDEOS,
+  Tags.YOUTUBE_SUBSCRIPTION,
+  Tags.YOUTUBE_VIDEO,
+  Tags.YOUTUBE_VIDEO_CATEGORY,
+  Tags.YOUTUBE_LIKE_VIDEOS,
+  Tags.YOUTUBE_QUEUE_VIDEOS,
+  Tags.USER,
+];

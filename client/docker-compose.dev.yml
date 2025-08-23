@@ -1,0 +1,13 @@
+version: '3'
+name: dripdrop-ui
+services:
+  web:
+    container_name: web
+    build:
+      context: .
+    entrypoint: npm run dev -- --port $PORT --host 0.0.0.0
+    restart: always
+    volumes:
+      - ./:/src
+    ports:
+      - $PORT:$PORT
