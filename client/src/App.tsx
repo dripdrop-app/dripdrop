@@ -4,7 +4,7 @@ import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
 import { useEffect } from "react";
 import { BsYoutube } from "react-icons/bs";
-import { MdAccountCircle, MdCloudDownload, MdQueue, MdSubscriptions } from "react-icons/md";
+import { MdAccountCircle, MdCloudDownload, MdSubscriptions } from "react-icons/md";
 import { Link, matchPath, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
 import { Account, CreateAccount, Login, PrivacyPolicy, TermsOfService, VerifyAccount } from "./pages/Auth";
@@ -108,14 +108,6 @@ const App = () => {
                   leftSection={<MdSubscriptions />}
                   active={!!matchPath("/youtube/subscriptions", location.pathname)}
                 />
-                <NavLink
-                  component={Link}
-                  to="/youtube/videos/queue"
-                  label="Queue"
-                  onClick={handlers.close}
-                  leftSection={<MdQueue />}
-                  active={!!matchPath("/youtube/videos/queue", location.pathname)}
-                />
               </AppShell.Section>
               <AppShell.Section>
                 <NavLink
@@ -132,7 +124,7 @@ const App = () => {
           <AppShell.Header bg="blue.8">
             <Flex align="center" direction="row" h="100%" mx="lg">
               <Burger hiddenFrom="sm" opened={sessionStatus.isSuccess && openedSideBar} onClick={handlers.toggle} />
-              <Avatar alt="dripdrop" src="https://ewr1.vultrobjects.com/dripdrop-prod/assets/dripdrop.png" />
+              <Avatar alt="dripdrop" src="https://dripdrop-prod.nyc3.cdn.digitaloceanspaces.com/assets/dripdrop.png" />
               <Title c="white" order={3} fw={600}>
                 dripdrop
               </Title>

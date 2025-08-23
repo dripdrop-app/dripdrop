@@ -216,7 +216,7 @@ const MusicForm = () => {
                   alt="blank"
                   src={
                     watchFields.resolvedArtworkUrl ||
-                    "https://ewr1.vultrobjects.com/dripdrop-prod/assets/blank_image.jpeg"
+                    "https://dripdrop-prod.nyc3.cdn.digitaloceanspaces.com/assets/blank_image.jpeg"
                   }
                 />
               </Box>
