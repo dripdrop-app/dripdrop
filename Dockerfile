@@ -9,7 +9,7 @@ COPY ./pyproject.toml ./pyproject.toml
 
 RUN uv sync
 
-COPY . .
+COPY --exclude=client . .
 
 ENV PATH="/app/.venv/bin:$PATH"
 

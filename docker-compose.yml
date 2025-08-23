@@ -12,12 +12,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-  postgres: &postgres
+  postgres:
     container_name: postgres
     image: postgres:14
     restart: unless-stopped
-    profiles:
-      - prod
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "dripdrop"]
       interval: 30s
@@ -29,16 +27,12 @@ services:
       - type: volume
         source: postgres_volume
         target: /var/lib/postgresql/data
-  postgres-dev:
-    <<: *postgres
-    profiles:
-      - dev
     ports:
       - target: 5432
         published: 5432
         protocol: tcp
         mode: host
-  redis: &redis
+  redis:
     container_name: redis
     image: redis
     restart: unless-stopped
@@ -51,10 +45,6 @@ services:
       - type: volume
         source: redis_volume
         target: /data
-  redis-dev:
-    <<: *redis
-    profiles:
-      - dev
     ports:
       - target: 6379
         published: 6379
