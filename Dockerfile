@@ -1,5 +1,8 @@
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm
 
+ARG PORT=5000
+ARG WORKERS=2
+
 RUN apt update && apt install -y ffmpeg 
 
 WORKDIR /app
@@ -13,4 +16,6 @@ COPY --exclude=client . .
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["fastapi", "run", "--host", "0.0.0.0"]
+CMD ["server"]
+
+ENTRYPOINT [ "make" ]
