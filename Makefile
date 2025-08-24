@@ -30,18 +30,21 @@ test:
 test-fast:
 	ENV=testing uv run pytest tests -m "not long"
 
-.PHONY: run-server-dev
-run-server-dev:
+.PHONY: server-dev
+server-dev:
 	docker compose --profile dev up -d && uv run fastapi dev app
 
-.PHONY: run-client-dev
-run-client-dev:
+.PHONY: client-dev
+client-dev:
 	cd client && npm run dev
 
-# Replace with celery command
-# .PHONY: worker-dev
-# worker-dev:
-# 	infisical run --env=dev -- uv run litestar workers run --verbose --debug
+.PHONY: worker-dev
+worker-dev:
+	uv run watchfiles "celery -A app.tasks.app worker -c 2 --loglevel=info" app/tasks
+
+.PHONY: dev
+dev:
+	make server-dev & make client-dev & make worker-dev
 
 .PHONY: infisical
 infisical:
