@@ -7,7 +7,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import AlertConfirmation from "../../components/AlertConfirmation";
 import ForgotPasswordModal from "../../components/Auth/ForgotPasswordModal";
 
-import { useLoginMutation } from "../../api/auth";
+import { useCheckSessionQuery, useLoginMutation } from "../../api/auth";
 
 interface LoginForm {
   email: string;
@@ -17,6 +17,7 @@ interface LoginForm {
 export const Login = () => {
   const { reset, handleSubmit, control } = useForm<LoginForm>({ reValidateMode: "onSubmit" });
 
+  const sessionStatus = useCheckSessionQuery();
   const [login, loginStatus] = useLoginMutation();
 
   const onSubmit = useCallback((data: LoginForm) => login(data), [login]);
@@ -24,6 +25,12 @@ export const Login = () => {
   const location = useLocation();
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (sessionStatus.isSuccess) {
+      navigate("/");
+    }
+  }, [navigate, sessionStatus.isSuccess]);
 
   useEffect(() => {
     if (loginStatus.isSuccess) {
