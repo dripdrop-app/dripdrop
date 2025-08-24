@@ -32,6 +32,7 @@ const enhancedApi = api
             if (result.relatedVideos) {
               tags.push(...result.relatedVideos.map((video) => ({ type: Tags.YOUTUBE_VIDEO, id: video.id })));
             }
+            return tags;
           }
           return [];
         },
