@@ -16,6 +16,7 @@ install-server:
 install-client:
 	cd client && npm install
 
+.PHONY: install
 install: install-server install-client
 
 .PHONY: lint
@@ -52,4 +53,12 @@ infisical:
 
 .PHONY: clean
 clean:
-	rm -rf $(shell find app -name __pycache__)
+	rm -rf $(shell find app -name __pycache__) && rm -rf $(shell find client -name node_modules)
+
+.PHONY: server
+server: migrate
+	uvicorn app --host 0.0.0.0 --port $$PORT --workers $$WORKER
+
+.PHONY: worker
+worker: migrate
+	celery -A app.tasks.app worker -c $$WORKER --loglevel=info
