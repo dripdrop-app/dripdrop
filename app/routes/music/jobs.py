@@ -178,4 +178,4 @@ async def listen_jobs(
                     await websocket.send_json(parsed_message.model_dump())
             await websocket.send_json({"status": "PING"})
     except WebSocketDisconnect:
-        await subscriber.stop_listening()
+        subscriber.stop_listening()
