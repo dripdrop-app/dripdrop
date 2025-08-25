@@ -4,6 +4,7 @@
 - make
 - [docker](https://docs.docker.com/engine/install/)
 - [infisical](https://infisical.com/docs/cli/overview)
+- [nvm](https://github.com/nvm-sh/nvm)
 
 ## Setup
 
@@ -15,22 +16,28 @@ make install
 
 ## Run
 
-Deploy services with docker using this command:
-
-```bash
-make deploy-local
-```
-
 To run the development server run this command
 
 ```bash
-make run-dev
+make server-dev
 ```
 
 To run the development worker run this command
 
 ```bash
 make worker-dev
+```
+
+To run the development client run this command
+
+```bash
+make client-dev
+```
+
+To run all three development services run this command
+
+```bash
+make dev
 ```
 
 ## Test
