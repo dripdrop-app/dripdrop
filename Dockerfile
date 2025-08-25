@@ -16,4 +16,6 @@ COPY . .
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD [ "make" ]
+ENTRYPOINT [ "make" ]
+
+CMD [ "server" ]
