@@ -61,4 +61,4 @@ server: migrate
 
 .PHONY: worker
 worker: migrate
-	celery -A app.tasks.app worker -c $$WORKERS --loglevel=info
+	celery -A app.tasks.app worker -c $$WORKERS --loglevel=info & celery -A app.tasks.app beat --loglevel=info
