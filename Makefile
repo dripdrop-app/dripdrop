@@ -45,7 +45,7 @@ worker-dev:
 
 .PHONY: dev
 dev:
-	make server-dev & make client-dev & make worker-dev
+	make server-dev & make client-dev & make worker-dev & wait
 
 .PHONY: infisical
 infisical:
@@ -61,4 +61,4 @@ server: migrate
 
 .PHONY: worker
 worker: migrate
-	celery -A app.tasks.app worker -c $$WORKERS --loglevel=info & celery -A app.tasks.app beat --loglevel=info
+	celery -A app.tasks.app worker -c $$WORKERS --loglevel=info & celery -A app.tasks.app beat --loglevel=info & wait
