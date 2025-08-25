@@ -57,7 +57,7 @@ clean:
 
 .PHONY: server
 server: migrate
-	uvicorn app.__init__:app --host 0.0.0.0 --port $$PORT --workers $$WORKERS
+	uvicorn app:app --host 0.0.0.0 --port $$PORT --workers $$WORKERS
 
 .PHONY: worker
 worker: migrate
