@@ -12,18 +12,13 @@ dependencies = [
     "boto3>=1.38.38",
     "bs4>=0.0.2",
     "celery[redis]>=5.5.3",
-    "commitizen>=4.8.3",
     "fake-useragent>=2.2.0",
     "faker>=37.4.0",
     "fastapi[all]>=0.115.13",
     "httpx>=0.28.1",
     "mutagen>=1.47.0",
-    "pre-commit>=4.2.0",
     "pydantic-settings>=2.9.1",
     "pyjwt>=2.10.1",
-    "pytest>=8.4.0",
-    "pytest-asyncio>=1.0.0",
-    "pytest-cov>=6.2.1",
     "smtp2go>=2.3.1",
     "sqlalchemy>=2.0.41",
     "yt-dlp>=2025.6.9",
@@ -31,6 +26,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "commitizen>=4.8.3",
+    "pre-commit>=4.2.0",
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.2.1",
     "ruff>=0.12.0",
 ]
 
