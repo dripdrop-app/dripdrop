@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 
+import pytest
 from fastapi import status
 
 URL = "/api/music/grouping"
@@ -51,6 +52,7 @@ async def test_grouping_with_failed_to_retrieve(
     assert response.json() == {"detail": "Unable to get grouping."}
 
 
+@pytest.mark.xfail(reason="yt-dlp fails to run in github actions")
 async def test_grouping_with_youtube_video_url(client, create_and_login_user):
     """
     Test retrieving the grouping for a valid youtube video. The endpoint
@@ -66,6 +68,7 @@ async def test_grouping_with_youtube_video_url(client, create_and_login_user):
     assert response.json() == {"grouping": "Food Dip"}
 
 
+@pytest.mark.xfail(reason="yt-dlp fails to run in github actions")
 async def test_grouping_with_video_url(client, create_and_login_user):
     """
     Test retrieving the grouping for a valid video supported by yt-dlp.
