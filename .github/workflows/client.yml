@@ -27,7 +27,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Install Client Dependencies and build
-        run: cd client && npm install --production=false && npm run build
+        run: npm install --production=false && npm run build
         working-directory: client
       - name: Log in to the Container registry
         uses: docker/login-action@v3
