@@ -57,8 +57,8 @@ clean:
 
 .PHONY: server
 server: migrate
-	uvicorn app --host 0.0.0.0 --port $$PORT --workers $$WORKER
+	uvicorn app --host 0.0.0.0 --port $$PORT --workers $$WORKERS
 
 .PHONY: worker
 worker: migrate
-	celery -A app.tasks.app worker -c $$WORKER --loglevel=info
+	celery -A app.tasks.app worker -c $$WORKERS --loglevel=info
