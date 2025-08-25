@@ -4,7 +4,7 @@ on: [push, workflow_dispatch]
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: dripdrop/server
+  IMAGE_NAME: dripdrop-app/server
 
 jobs:
   lint:

@@ -4,7 +4,7 @@ on: [push, workflow_dispatch]
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: dripdrop/ui
+  IMAGE_NAME: dripdrop-app/ui
 
 jobs:
   build:
