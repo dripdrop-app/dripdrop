@@ -41,7 +41,7 @@ client-dev:
 
 .PHONY: worker-dev
 worker-dev:
-	uv run watchfiles "celery -A app.tasks.app worker -c 2 --loglevel=info" app/tasks
+	docker compose --profile dev up -d && uv run watchfiles "celery -A app.tasks.app worker -c 2 --loglevel=info" app/tasks
 
 .PHONY: dev
 dev:
