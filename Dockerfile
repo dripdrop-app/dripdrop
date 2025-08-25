@@ -1,11 +1,19 @@
-FROM python:3.12-alpine
-RUN apk add ffmpeg bash curl --no-cache
-RUN pip install -U pip
-RUN pip install uv
-RUN mkdir -p /src
-WORKDIR /src
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm
+
+ARG PORT=5000
+ARG WORKERS=2
+
+RUN apt update && apt install -y ffmpeg 
+
+WORKDIR /app
+
 COPY ./uv.lock ./uv.lock
 COPY ./pyproject.toml ./pyproject.toml
+
 RUN uv sync
+
 COPY . .
-RUN chmod +x ./scripts/*
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+CMD [ "make" ]

@@ -1,0 +1,85 @@
+import re
+from unittest.mock import MagicMock
+
+from fastapi import status
+
+URL = "/api/music/artwork"
+
+
+async def test_artwork_when_not_logged_in(client):
+    """
+    Testing resolving artwork url when the user is not logged in. The endpoint
+    should return a 401 status.
+    """
+
+    response = await client.get(URL, params={"artwork_url": "https://testimage.jpeg"})
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+async def test_artwork_with_invalid_url(client, faker, create_and_login_user):
+    """
+    Test resolving artwork with an invalid url. The endpoint should
+    return a 422 error.
+    """
+
+    await create_and_login_user()
+    response = await client.get(URL, params={"artwork_url": faker.url([])})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+async def test_artwork_with_valid_image_url_but_failed_retrieval(
+    client, create_and_login_user, test_image_url, monkeypatch
+):
+    """
+    Testing resolving an artwork url given a valid image url but failed
+    to retrieve the image. The endpoint should respond with a 400 response.
+    """
+
+    mock_resolve_artwork = MagicMock()
+    mock_resolve_artwork.return_value = None
+    monkeypatch.setattr(
+        "app.services.imagedownloader.resolve_artwork", mock_resolve_artwork
+    )
+
+    await create_and_login_user()
+    response = await client.get(URL, params={"artwork_url": test_image_url})
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "Unable to get artwork."}
+
+
+async def test_artwork_with_valid_image_url(
+    client, create_and_login_user, test_image_url
+):
+    """
+    Testing resolving an artwork url given a valid image url. The
+    endpoint should respond with a 200 response and the same image url.
+    """
+
+    await create_and_login_user()
+    response = await client.get(URL, params={"artwork_url": test_image_url})
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {"resolvedArtworkUrl": test_image_url}
+
+
+async def test_artwork_with_valid_soundcloud_url(client, create_and_login_user):
+    """
+    Test resolving an artwork url given a soundcloud url. The endpoint
+    should return a 200 status with the artwork url of the given song.
+    """
+
+    await create_and_login_user()
+    response = await client.get(
+        URL,
+        params={
+            "artwork_url": "https://soundcloud.com/badbunny15/bad-bunny-buscabulla-andrea"
+        },
+    )
+    assert response.status_code == status.HTTP_200_OK
+    json = response.json()
+    assert (
+        re.match(
+            r"https:\/\/i1\.sndcdn\.com\/artworks-[a-zA-Z0-9]+-0-t500x500\.jpg",
+            json.get("resolvedArtworkUrl", ""),
+        )
+        is not None
+    )

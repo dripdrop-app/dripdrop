@@ -1,25 +1,64 @@
-PROJECT=dripdrop
-COMPOSE_FILE=docker-compose.yml
-SERVICES=dripdrop-postgres dripdrop-redis
+CMD ?=
 
-bws-gen-env:
-	bws run --project-id df08fac1-cd3f-48e5-9299-b174001ca3c6 env | sort > .env.bws
-	env | sort > .env.all
-	comm -13 .env.all .env.bws > .env
-	rm .env.all .env.bws
+.PHONY: create-migration
+create-migration:
+	uv run alembic -c app/db/alembic.ini revision --autogenerate
+
+.PHONY: migrate
+migrate:
+	uv run alembic -c app/db/alembic.ini upgrade head
+
+.PHONY: install-server
+install-server:
+	uv sync && uv run pre-commit install
+
+.PHONY: install-client
+install-client:
+	cd client && npm install
+
+.PHONY: install
+install: install-server install-client
+
+.PHONY: lint
 lint:
-	uv run ruff check
-build-dev:
-	ENV=development docker compose -p $(PROJECT) -f $(COMPOSE_FILE) build
-build-test:
-	ENV=testing docker compose -p $(PROJECT) -f $(COMPOSE_FILE) build
-remove:
-	docker compose -p $(PROJECT) -f $(COMPOSE_FILE) down
-test: build-test
-	ENV=testing docker compose -p $(PROJECT) -f $(COMPOSE_FILE) run --rm dripdrop-server uv run python -m unittest discover -vv
-deploy-dev: remove bws-gen-env build-dev
-	ENV=development docker compose -p $(PROJECT) -f $(COMPOSE_FILE) up --remove-orphans --wait
-deploy-local: remove bws-gen-env build-dev
-	ENV=development docker compose -p $(PROJECT) -f $(COMPOSE_FILE) up $(SERVICES) --remove-orphans --wait
+	uv run ruff check --select I --fix
 
-	
+.PHONY: test
+test:
+	ENV=testing uv run pytest tests --cov=app --cov-report=term-missing
+
+.PHONY: test-fast
+test-fast:
+	ENV=testing uv run pytest tests -m "not long"
+
+.PHONY: server-dev
+server-dev:
+	docker compose --profile dev up -d && uv run fastapi dev app
+
+.PHONY: client-dev
+client-dev:
+	cd client && npm run dev
+
+.PHONY: worker-dev
+worker-dev:
+	docker compose --profile dev up -d && uv run watchfiles "celery -A app.tasks.app worker -c 2 --loglevel=info" app/tasks
+
+.PHONY: dev
+dev:
+	make server-dev & make client-dev & make worker-dev
+
+.PHONY: infisical
+infisical:
+	infisical run --env=dev -- make $(CMD)
+
+.PHONY: clean
+clean:
+	rm -rf $(shell find app -name __pycache__) && rm -rf $(shell find client -name node_modules)
+
+.PHONY: server
+server: migrate
+	uvicorn app --host 0.0.0.0 --port $$PORT --workers $$WORKER
+
+.PHONY: worker
+worker: migrate
+	celery -A app.tasks.app worker -c $$WORKER --loglevel=info
