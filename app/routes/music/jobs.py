@@ -72,15 +72,16 @@ async def create_job(
     )
     session.add(music_job)
     await session.commit()
-    background_tasks.add_task(
-        music_job.upload_files,
+    music_file = (
         MusicFile(
             file=await form.file.read(),
             filename=form.file.filename,
             content_type=form.file.content_type,
-        ),
-        form.artwork_url,
+        )
+        if form.file
+        else None
     )
+    background_tasks.add_task(music_job.upload_files, music_file, form.artwork_url)
     background_tasks.add_task(run_music_job.delay, music_job_id=str(music_job.id))
     return None
 
