@@ -4,12 +4,23 @@ import { MdDelete, MdDownload, MdError } from "react-icons/md";
 
 import { useDeleteJobMutation } from "../../api/music";
 import { MusicJobResponse as MusicJob } from "../../api/generated/musicApi";
-import { buildURL } from "../../config";
 
 const MusicJobCard: FunctionComponent<MusicJob> = (props) => {
   // const createdAt = new Date(props.createdAt).toLocaleDateString();
 
   const [removeMusicJob, removeMusicJobStatus] = useDeleteJobMutation();
+
+  const downloadFile = async () => {
+    if (props.downloadUrl && props.downloadFilename) {
+      const response = await fetch(props.downloadUrl, { mode: "no-cors" });
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = props.downloadFilename;
+      a.click();
+    }
+  };
 
   return (
     <Card>
@@ -89,13 +100,10 @@ const MusicJobCard: FunctionComponent<MusicJob> = (props) => {
             Failed
           </Button>
           <Button
-            component="a"
             display={props.completed ? "initial" : "none"}
             color="green"
-            href={buildURL(`api/music/jobs/${props.id}/download`)}
-            target="_blank"
-            rel="noopener noreferrer"
             leftSection={<MdDownload />}
+            onClick={downloadFile}
           >
             Download
           </Button>
