@@ -92,7 +92,7 @@ const MusicJobCard: FunctionComponent<MusicJob> = (props) => {
             component="a"
             display={props.completed ? "initial" : "none"}
             color="green"
-            href={buildURL(`api/music/job/${props.id}/download`)}
+            href={buildURL(`api/music/jobs/${props.id}/download`)}
             target="_blank"
             rel="noopener noreferrer"
             leftSection={<MdDownload />}
