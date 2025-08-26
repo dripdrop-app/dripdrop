@@ -19,6 +19,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { useLazyArtworkQuery, useCreateJobMutation, useLazyGroupingQuery, useTagsMutation } from "../../api/music";
 import { isBase64, isValidImage, isValidLink, resolveAlbumFromTitle } from "../../utils/helpers";
+import { CreateMusicJob } from "../../api/generated/musicApi";
 
 const MusicForm = () => {
   const { reset, handleSubmit, control, trigger, setValue } = useForm<MusicFormState>({
@@ -59,7 +60,22 @@ const MusicForm = () => {
           color: "red",
         });
 
-      const status = await createMusicJob({ ...data, artwork_url: data.resolvedArtworkUrl });
+      const formData = new FormData();
+      if (data.file) {
+        formData.append("file", data.file);
+      } else {
+        formData.append("video_url", data.videoUrl);
+      }
+      if (data.resolvedArtworkUrl) {
+        formData.append("artwork_url", data.resolvedArtworkUrl);
+      }
+      formData.append("title", data.title);
+      formData.append("artist", data.artist);
+      formData.append("album", data.album);
+      if (data.grouping) {
+        formData.append("grouping", data.grouping);
+      }
+      const status = await createMusicJob(formData as unknown as CreateMusicJob);
       if (!status.error) {
         reset();
         successNotification();
