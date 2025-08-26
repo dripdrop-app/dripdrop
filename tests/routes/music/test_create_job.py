@@ -118,3 +118,33 @@ async def test_create_job_with_file(
     assert music_job.artist == "artist"
     assert music_job.album == "album"
     assert music_job.grouping == "grouping"
+
+
+async def test_create_job_with_video_url(
+    client, create_and_login_user, db_session, test_video_url
+):
+    """
+    Test creating a job with a video url. The endpoint should return a 201 status.
+    """
+
+    await create_and_login_user()
+    response = await client.post(
+        URL,
+        data={
+            "title": "title",
+            "artist": "artist",
+            "album": "album",
+            "grouping": "grouping",
+            "video_url": test_video_url,
+        },
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    query = select(MusicJob)
+    music_jobs = (await db_session.scalars(query)).all()
+    assert len(music_jobs) == 1
+    music_job = music_jobs[0]
+    assert music_job.title == "title"
+    assert music_job.artist == "artist"
+    assert music_job.album == "album"
+    assert music_job.grouping == "grouping"
