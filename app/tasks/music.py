@@ -102,13 +102,11 @@ async def run_music_job(self: QueueTask, music_job_id: str):
             artwork_info=artwork_info,
         )
 
-        new_filename = sanitize_filename(
-            "{folder}/{job_id}/{title} {artist}.mp3"
-        ).format(
+        new_filename = "{folder}/{job_id}/{title} {artist}.mp3".format(
             folder=settings.aws_s3_music_folder,
             job_id=str(music_job.id),
-            title=music_job.title.lower(),
-            artist=music_job.artist.lower(),
+            title=sanitize_filename(music_job.title.lower()),
+            artist=sanitize_filename(music_job.artist.lower()),
         )
 
         async with aiofiles.open(filename, mode="rb") as f:
