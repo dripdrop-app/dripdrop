@@ -1,10 +1,7 @@
-import pathlib
 import re
 from datetime import datetime, timezone
 from typing import Annotated
-from urllib.parse import quote
 
-import httpx
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -17,7 +14,6 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
-from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 
 from app.db import MusicFile, MusicJob
@@ -104,33 +100,6 @@ async def delete_job(
         await db_session.commit()
         background_tasks.add_task(music_job.cleanup)
         return None
-    raise HTTPException(detail="Job not found.", status_code=status.HTTP_404_NOT_FOUND)
-
-
-@router.get("/{job_id}/download", responses={status.HTTP_404_NOT_FOUND: {}})
-async def download_job(
-    user: AuthUser,
-    db_session: DatabaseSession,
-    job_id: Annotated[str, Path()],
-):
-    query = select(MusicJob).where(
-        MusicJob.id == job_id, MusicJob.user_email == user.email
-    )
-    if music_job := await db_session.scalar(query):
-        if music_job.download_url:
-            filename = pathlib.Path(music_job.download_filename).name
-            async with httpx.AsyncClient() as client:
-                response = await client.get(music_job.download_url)
-                return StreamingResponse(
-                    content=response.aiter_bytes(chunk_size=500),
-                    media_type=response.headers.get("content-type"),
-                    headers={
-                        "Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"
-                    },
-                )
-        raise HTTPException(
-            detail="Download not found.", status_code=status.HTTP_404_NOT_FOUND
-        )
     raise HTTPException(detail="Job not found.", status_code=status.HTTP_404_NOT_FOUND)
 
 
