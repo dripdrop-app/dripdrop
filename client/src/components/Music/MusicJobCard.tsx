@@ -26,7 +26,7 @@ const MusicJobCard: FunctionComponent<MusicJob> = (props) => {
     <Card>
       <Card.Section>
         <Image
-          src={props.artworkUrl || "https://ewr1.vultrobjects.com/dripdrop-prod/assets/blank_image.jpeg"}
+          src={props.artworkUrl || "https://dripdrop-prod.nyc3.cdn.digitaloceanspaces.com/assets/blank_image.jpeg"}
           alt="Artwork"
           height={150}
         />
