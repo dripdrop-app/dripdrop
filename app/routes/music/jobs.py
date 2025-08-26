@@ -135,7 +135,7 @@ async def listen_jobs(
         async for message in subscriber.listen(ignore_subscribe_messages=True):
             if message:
                 parsed_message = MusicJobUpdateResponse.model_validate_json(
-                    message["message"]
+                    message["data"]
                 )
                 job_id = parsed_message.id
                 query = select(MusicJob).where(

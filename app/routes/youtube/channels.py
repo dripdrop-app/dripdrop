@@ -43,7 +43,7 @@ async def listen_channels(
         async for message in subscriber.listen(ignore_subscribe_messages=True):
             if message:
                 parsed_message = YoutubeChannelUpdateResponse.model_validate_json(
-                    message["message"]
+                    message["data"]
                 )
                 channel_id = parsed_message.id
                 query = select(YoutubeSubscription).where(
