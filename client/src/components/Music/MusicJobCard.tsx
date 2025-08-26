@@ -17,7 +17,7 @@ const MusicJobCard: FunctionComponent<MusicJob> = (props) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = props.downloadFilename;
+      a.download = props.downloadFilename.substring(props.downloadFilename.lastIndexOf("/") + 1);
       a.click();
     }
   };
