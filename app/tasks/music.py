@@ -76,12 +76,26 @@ async def get_artwork_info(music_job: MusicJob):
         return None
 
 
-@celery.task
-async def on_failed_music_job(request, exc, traceback):
-    print(request)
+async def on_failed_music_job(self: QueueTask, exc, task_id, args, kwargs, einfo):
+    music_job_id = kwargs.get("music_job_id")
+    pubsub = PubSub(channels=[PubSub.Channels.MUSIC_JOB_UPDATE])
+    async with self.db_session() as db_session:
+        music_job = await db_session.get_one(MusicJob, music_job_id)
+        music_job.failed = datetime.now(timezone.utc)
+        await db_session.commit()
+        await pubsub.publish_message(
+            MusicJobUpdateResponse(
+                id=music_job_id, status="COMPLETED"
+            ).model_dump_json()
+        )
 
 
-@celery.task(bind=True, link_error=on_failed_music_job.s())
+@celery.task(
+    bind=True,
+    on_failure=lambda *args, **kwargs: asyncio.run(
+        on_failed_music_job(*args, **kwargs)
+    ),
+)
 async def run_music_job(self: QueueTask, music_job_id: str):
     pubsub = PubSub(channels=[PubSub.Channels.MUSIC_JOB_UPDATE])
     async with self.db_session() as db_session:
