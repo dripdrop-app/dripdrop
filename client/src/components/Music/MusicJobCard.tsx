@@ -12,7 +12,7 @@ const MusicJobCard: FunctionComponent<MusicJob> = (props) => {
 
   const downloadFile = async () => {
     if (props.downloadUrl && props.downloadFilename) {
-      const response = await fetch(props.downloadUrl, { mode: "no-cors" });
+      const response = await fetch(props.downloadUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
