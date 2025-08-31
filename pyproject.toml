@@ -12,6 +12,7 @@ dependencies = [
     "boto3>=1.38.38",
     "bs4>=0.0.2",
     "celery[redis]>=5.5.3",
+    "cryptography>=45.0.6",
     "fake-useragent>=2.2.0",
     "faker>=37.4.0",
     "fastapi[all]>=0.115.13",
