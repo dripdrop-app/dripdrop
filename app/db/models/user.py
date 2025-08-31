@@ -1,10 +1,12 @@
 from typing import TYPE_CHECKING
 
 import bcrypt
-from sqlalchemy import event
+from cryptography.fernet import Fernet
+from sqlalchemy import ForeignKey, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from app.settings import settings
 
 if TYPE_CHECKING:
     from app.db.models.music import MusicJob
@@ -62,3 +64,39 @@ class User(Base):
 def init_user(target: User, args, kwargs):
     if "password" in kwargs:
         kwargs["password"] = target.hash_password(kwargs["password"])
+
+
+class WebDav(Base):
+    __tablename__ = "webdav"
+
+    email: Mapped[str] = mapped_column(
+        ForeignKey(
+            User.email,
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="webdav_email_fkey",
+        ),
+        primary_key=True,
+    )
+    username: Mapped[str] = mapped_column(nullable=False)
+    password: Mapped[str] = mapped_column(nullable=False)
+    url: Mapped[str] = mapped_column(nullable=False)
+    user: Mapped[User] = relationship(User, back_populates="webdav")
+
+    @classmethod
+    def encrypt_value(cls, value: str):
+        fernet = Fernet(settings.secret_key)
+        return str(fernet.encrypt(bytes(value, encoding="utf-8")), encoding="utf-8")
+
+    @classmethod
+    def decrypt_value(cls, value: str):
+        fernet = Fernet(settings.secret_key)
+        return str(fernet.decrypt(bytes(value, encoding="utf-8")), encoding="utf-8")
+
+
+@event.listens_for(WebDav, "init")
+def init_webdav(target: WebDav, args, kwargs):
+    if "username" in kwargs:
+        kwargs["username"] = WebDav.encrypt_value(kwargs["username"])
+    if "password" in kwargs:
+        kwargs["password"] = WebDav.encrypt_value(kwargs["password"])

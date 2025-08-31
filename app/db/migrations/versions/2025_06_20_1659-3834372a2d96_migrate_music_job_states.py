@@ -1,4 +1,4 @@
-"""empty message
+"""migrate music job states
 
 Revision ID: 3834372a2d96
 Revises: 9083dc87022c
