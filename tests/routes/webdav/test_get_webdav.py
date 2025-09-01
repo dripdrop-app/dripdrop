@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import User, WebDav
 
-URL = "/api/webdav/"
+URL = "/api/webdav"
 
 
 async def test_get_webdav_when_not_logged_in(client: AsyncClient) -> None:
