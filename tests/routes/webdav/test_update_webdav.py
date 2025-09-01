@@ -9,9 +9,7 @@ from app.db import User, WebDav
 URL = "/api/webdav/"
 
 
-async def test_update_webdav_when_not_logged_in(
-    client: AsyncClient, faker: Faker
-) -> None:
+async def test_update_webdav_when_not_logged_in(client: AsyncClient, faker: Faker):
     """
     Test updating webdav when not logged in. The
     endpoint should return a 401 status.
@@ -32,7 +30,7 @@ async def test_update_webdav_creates_new(
     db_session: AsyncSession,
     create_and_login_user,
     faker: Faker,
-) -> None:
+):
     """
     Test updating webdav when no configuration exists. The
     endpoint should create a new configuration and return a 200 status.
@@ -66,7 +64,7 @@ async def test_update_webdav_updates_existing(
     db_session: AsyncSession,
     create_and_login_user,
     faker: Faker,
-) -> None:
+):
     """
     Test updating webdav when a configuration already exists. The
     endpoint should update the existing configuration and return a 200 status.

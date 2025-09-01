@@ -8,7 +8,7 @@ from app.db import User, WebDav
 URL = "/api/webdav"
 
 
-async def test_get_webdav_when_not_logged_in(client: AsyncClient) -> None:
+async def test_get_webdav_when_not_logged_in(client: AsyncClient):
     """
     Test getting webdav when not logged in. The endpoint should
     return a 401 response.
@@ -17,7 +17,7 @@ async def test_get_webdav_when_not_logged_in(client: AsyncClient) -> None:
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-async def test_get_webdav_not_found(client: AsyncClient, create_and_login_user) -> None:
+async def test_get_webdav_not_found(client: AsyncClient, create_and_login_user):
     """
     Test getting webdav when it does not exist. The endpoint should
     return a 404 response.
@@ -33,7 +33,7 @@ async def test_get_webdav(
     db_session: AsyncSession,
     create_and_login_user,
     faker: Faker,
-) -> None:
+):
     """
     Test getting webdav when it exists. The endpoint should
     return a 200 response.

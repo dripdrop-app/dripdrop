@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.admin import router as admin_router
 from app.routes.authentication import router as auth_router
 from app.routes.music import router as music_router
+from app.routes.webdav import router as webdav_router
 from app.routes.youtube import router as youtube_router
 from app.settings import ENV, settings
 
@@ -12,6 +13,7 @@ api_router.include_router(auth_router)
 api_router.include_router(music_router)
 api_router.include_router(youtube_router)
 api_router.include_router(admin_router)
+api_router.include_router(webdav_router)
 
 
 app = FastAPI(title="dripdrop", docs_url="/api/docs", openapi_url="/api/openapi.json")
