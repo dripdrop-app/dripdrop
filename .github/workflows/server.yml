@@ -37,6 +37,7 @@ jobs:
           echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> .env
           echo "AWS_S3_MUSIC_FOLDER=${{ secrets.AWS_S3_MUSIC_FOLDER }}" >> .env
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "FERNET_KEY=${{ secrets.FERNET_KEY }}" >> .env
           echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" >> .env
           echo "INVIDIOUS_API_URL=${{ secrets.INVIDIOUS_API_URL }}" >> .env
           echo "REDIS_URL=redis://redis:6379" >> .env

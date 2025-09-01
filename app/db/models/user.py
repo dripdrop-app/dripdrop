@@ -88,12 +88,12 @@ class WebDav(Base):
 
     @classmethod
     def encrypt_value(cls, value: str):
-        fernet = Fernet(settings.secret_key)
+        fernet = Fernet(settings.fernet_key)
         return str(fernet.encrypt(bytes(value, encoding="utf-8")), encoding="utf-8")
 
     @classmethod
     def decrypt_value(cls, value: str):
-        fernet = Fernet(settings.secret_key)
+        fernet = Fernet(settings.fernet_key)
         return str(fernet.decrypt(bytes(value, encoding="utf-8")), encoding="utf-8")
 
 

@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     aws_s3_bucket: str
     aws_s3_music_folder: str
     env: ENV = ENV.DEVELOPMENT
+    fernet_key: str
     google_api_key: str
     invidious_api_url: str
     redis_url: str
