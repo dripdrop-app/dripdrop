@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     test_async_database_url: str
     test_aws_s3_bucket: str
     test_redis_url: str
+    test_webdav_password: str
+    test_webdav_url: str
+    test_webdav_username: str
     timeout: int = 600
     timezone: tz | None = tz.utc
 
