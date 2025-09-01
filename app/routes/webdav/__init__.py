@@ -1,5 +1,6 @@
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy import select
 
@@ -26,22 +27,44 @@ async def get_webdav(user: AuthUser, db_session: DatabaseSession):
     )
 
 
-@router.post("", response_model=WebDavResponse)
+@router.post(
+    "",
+    response_model=WebDavResponse,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Error connecting to webdav server."
+        }
+    },
+)
 async def update_webdav(
     user: AuthUser, db_session: DatabaseSession, body: Annotated[UpdateWebDav, Body()]
 ):
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.request(
+                "PROPFIND",
+                body.url,
+                headers={"Depth": "0"},
+                auth=(body.username, body.password),
+            )
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(
+                detail=f"Error connecting to webdav server: {e}.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
     query = select(WebDav).where(WebDav.email == user.email)
     if webdav := await db_session.scalar(query):
         webdav.username = body.username
         webdav.password = body.password
-        webdav.url = body.url
+        webdav.url = body.url.encoded_string()
         await db_session.commit()
     else:
         webdav = WebDav(
             email=user.email,
             username=body.username,
             password=body.password,
-            url=body.url,
+            url=body.url.encoded_string(),
         )
         db_session.add(webdav)
         await db_session.commit()
