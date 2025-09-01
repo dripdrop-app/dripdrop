@@ -5,19 +5,20 @@ const injectedRtkApi = api.injectEndpoints({
       CreateJobApiMusicJobsCreatePostApiResponse,
       CreateJobApiMusicJobsCreatePostApiArg
     >({
-      query: (queryArg) => ({ url: `/api/music/jobs/create`, method: "POST", body: queryArg }),
+      query: (queryArg) => ({
+        url: `/api/music/jobs/create`,
+        method: "POST",
+        body: queryArg,
+      }),
     }),
     deleteJobApiMusicJobsJobIdDeleteDelete: build.mutation<
       DeleteJobApiMusicJobsJobIdDeleteDeleteApiResponse,
       DeleteJobApiMusicJobsJobIdDeleteDeleteApiArg
     >({
-      query: (queryArg) => ({ url: `/api/music/jobs/${queryArg}/delete`, method: "DELETE" }),
-    }),
-    downloadJobApiMusicJobsJobIdDownloadGet: build.query<
-      DownloadJobApiMusicJobsJobIdDownloadGetApiResponse,
-      DownloadJobApiMusicJobsJobIdDownloadGetApiArg
-    >({
-      query: (queryArg) => ({ url: `/api/music/jobs/${queryArg}/download` }),
+      query: (queryArg) => ({
+        url: `/api/music/jobs/${queryArg}/delete`,
+        method: "DELETE",
+      }),
     }),
     getJobsApiMusicJobsListGet: build.query<GetJobsApiMusicJobsListGetApiResponse, GetJobsApiMusicJobsListGetApiArg>({
       query: (queryArg) => ({
@@ -51,7 +52,11 @@ const injectedRtkApi = api.injectEndpoints({
       }),
     }),
     getTagsApiMusicTagsPost: build.mutation<GetTagsApiMusicTagsPostApiResponse, GetTagsApiMusicTagsPostApiArg>({
-      query: (queryArg) => ({ url: `/api/music/tags`, method: "POST", body: queryArg }),
+      query: (queryArg) => ({
+        url: `/api/music/tags`,
+        method: "POST",
+        body: queryArg,
+      }),
     }),
   }),
   overrideExisting: false,
@@ -61,8 +66,6 @@ export type CreateJobApiMusicJobsCreatePostApiResponse = /** status 201 Successf
 export type CreateJobApiMusicJobsCreatePostApiArg = CreateMusicJob;
 export type DeleteJobApiMusicJobsJobIdDeleteDeleteApiResponse = /** status 200 Successful Response */ any;
 export type DeleteJobApiMusicJobsJobIdDeleteDeleteApiArg = string;
-export type DownloadJobApiMusicJobsJobIdDownloadGetApiResponse = /** status 200 Successful Response */ any;
-export type DownloadJobApiMusicJobsJobIdDownloadGetApiArg = string;
 export type GetJobsApiMusicJobsListGetApiResponse = /** status 200 Successful Response */ MusicJobListResponse;
 export type GetJobsApiMusicJobsListGetApiArg = {
   page: number;
@@ -131,8 +134,6 @@ export type BodyGetTagsApiMusicTagsPost = {
 export const {
   useCreateJobApiMusicJobsCreatePostMutation,
   useDeleteJobApiMusicJobsJobIdDeleteDeleteMutation,
-  useDownloadJobApiMusicJobsJobIdDownloadGetQuery,
-  useLazyDownloadJobApiMusicJobsJobIdDownloadGetQuery,
   useGetJobsApiMusicJobsListGetQuery,
   useLazyGetJobsApiMusicJobsListGetQuery,
   useGetGroupingApiMusicGroupingGetQuery,
