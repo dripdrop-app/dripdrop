@@ -1,13 +1,15 @@
 import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urljoin
 
 import aiofiles
 import aiofiles.os
 import httpx
+from sqlalchemy import select
 from yt_dlp.utils import sanitize_filename
 
-from app.db import MusicJob
+from app.db import MusicJob, WebDav
 from app.models.music import MusicJobUpdateResponse
 from app.services import audiotags, ffmpeg, imagedownloader, s3, tempfiles, ytdlp
 from app.services.pubsub import PubSub
@@ -123,12 +125,27 @@ async def run_music_job(self: QueueTask, music_job_id: str):
             artist=sanitize_filename(music_job.artist.lower()),
         )
 
+        query = select(WebDav).where(WebDav.email == music_job.user_email)
+        webdav = await db_session.scalar(query)
+
         async with aiofiles.open(filename, mode="rb") as f:
+            file_content = await f.read()
             await s3.upload_file(
                 filename=new_filename,
-                body=await f.read(),
+                body=file_content,
                 content_type="audio/mpeg",
             )
+            if webdav:
+                async with httpx.AsyncClient() as client:
+                    try:
+                        response = await client.put(
+                            urljoin(webdav.url, new_filename),
+                            data=file_content,
+                            auth=(webdav.username, webdav.password),
+                        )
+                        response.raise_for_status()
+                    except httpx.HTTPStatusError:
+                        print("Failed to upload to webdav.")
 
         music_job.download_filename = new_filename
         music_job.download_url = s3.resolve_url(filename=new_filename)
