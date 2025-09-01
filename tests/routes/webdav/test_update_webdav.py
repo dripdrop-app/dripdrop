@@ -1,3 +1,4 @@
+import respx
 from faker import Faker
 from fastapi import status
 from httpx import AsyncClient
@@ -25,6 +26,31 @@ async def test_update_webdav_when_not_logged_in(client: AsyncClient, faker: Fake
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+@respx.mock
+async def test_update_webdav_with_invalid_webdav(
+    client: AsyncClient,
+    create_and_login_user,
+    faker: Faker,
+):
+    """
+    Test updating webdav with an invalid URL. The
+    endpoint should return a 422 status.
+    """
+    await create_and_login_user()
+    new_data = {
+        "username": faker.user_name(),
+        "password": faker.password(),
+        "url": faker.url(),
+    }
+
+    respx.request("PROPFIND", new_data["url"]).respond(
+        status_code=status.HTTP_404_NOT_FOUND
+    )
+    response = await client.post(URL, json=new_data)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@respx.mock
 async def test_update_webdav_creating(
     client: AsyncClient,
     db_session: AsyncSession,
@@ -42,6 +68,7 @@ async def test_update_webdav_creating(
         "url": faker.url(),
     }
 
+    respx.request("PROPFIND", new_data["url"]).respond()
     response = await client.post(URL, json=new_data)
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == new_data
@@ -55,6 +82,7 @@ async def test_update_webdav_creating(
     assert webdav.url == new_data["url"]
 
 
+@respx.mock
 async def test_update_webdav_with_existing(
     client: AsyncClient,
     db_session: AsyncSession,
@@ -76,7 +104,7 @@ async def test_update_webdav_with_existing(
         "password": faker.password(),
         "url": faker.url(),
     }
-
+    respx.request("PROPFIND", updated_data["url"]).respond()
     response = await client.post(URL, json=updated_data)
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == updated_data
