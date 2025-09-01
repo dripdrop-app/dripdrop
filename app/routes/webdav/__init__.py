@@ -57,14 +57,14 @@ async def update_webdav(
     if webdav := await db_session.scalar(query):
         webdav.username = body.username
         webdav.password = body.password
-        webdav.url = body.url.encoded_string()
+        webdav.url = body.url
         await db_session.commit()
     else:
         webdav = WebDav(
             email=user.email,
             username=body.username,
             password=body.password,
-            url=body.url.encoded_string(),
+            url=body.url,
         )
         db_session.add(webdav)
         await db_session.commit()

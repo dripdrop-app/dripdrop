@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 
 from app.models import Response
 
@@ -12,4 +12,4 @@ class WebDavResponse(Response):
 class UpdateWebDav(BaseModel):
     username: str
     password: str
-    url: HttpUrl
+    url: str
