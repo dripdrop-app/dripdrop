@@ -48,9 +48,9 @@ async def update_webdav(
                 auth=(body.username, body.password),
             )
             response.raise_for_status()
-        except httpx.HTTPStatusError as e:
+        except Exception:
             raise HTTPException(
-                detail=f"Error connecting to webdav server: {e}.",
+                detail="Error connecting to webdav server.",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
     query = select(WebDav).where(WebDav.email == user.email)
