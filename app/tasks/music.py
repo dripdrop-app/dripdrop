@@ -141,7 +141,7 @@ async def run_music_job(self: QueueTask, music_job_id: str):
                 async with httpx.AsyncClient() as client:
                     response = await client.put(
                         f"{webdav.url}/{new_filename}",
-                        data=file_content,
+                        content=file_content,
                         auth=(webdav.username, webdav.password),
                     )
                     response.raise_for_status()

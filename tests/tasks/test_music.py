@@ -6,9 +6,10 @@ import yt_dlp.utils
 from fastapi import UploadFile
 from sqlalchemy.exc import NoResultFound
 
-from app.db import MusicJob, User
+from app.db import MusicJob, User, WebDav
 from app.services import audiotags
 from app.services.pubsub import PubSub
+from app.settings import settings
 from app.tasks.music import run_music_job
 
 
@@ -221,4 +222,61 @@ async def test_run_music_job_with_external_artwork(
         assert tags.grouping == expected_grouping
         assert tags.artwork_url == audiotags.AudioTags.get_image_as_base64(
             test_image, "image/png"
+        )
+
+
+@pytest.mark.long
+async def test_run_music_job_with_webdav_upload(
+    create_user,
+    create_music_job,
+    create_webdav,
+    db_session,
+    test_audio_url,
+):
+    """
+    Test running a music job with a video url and webdav configured. The music job
+    should finish successfully and upload the file to webdav.
+    """
+
+    user: User = await create_user()
+    webdav: WebDav = await create_webdav(
+        email=user.email,
+        url=settings.test_webdav_url,
+        username=settings.test_webdav_username,
+        password=settings.test_webdav_password,
+    )
+    music_job: MusicJob = await create_music_job(
+        email=user.email, video_url=test_audio_url
+    )
+
+    expected_title = music_job.title
+    expected_artist = music_job.artist
+    expected_album = music_job.album
+    expected_grouping = music_job.grouping
+
+    await run_music_job(music_job_id=str(music_job.id))
+
+    await db_session.refresh(music_job)
+
+    assert music_job.title == expected_title
+    assert music_job.artist == expected_artist
+    assert music_job.album == expected_album
+    assert music_job.grouping == expected_grouping
+    assert music_job.completed is not None
+    assert music_job.download_url is not None
+    assert music_job.download_filename is not None
+
+    async with httpx.AsyncClient() as client:
+        new_filename = music_job.download_filename.split("/")[-1]
+        response = await client.request(
+            "PROPFIND",
+            f"{webdav.url}/{new_filename}",
+            auth=(settings.test_webdav_username, settings.test_webdav_password),
+        )
+        assert response.status_code > 199 and response.status_code < 300
+
+        # Cleanup
+        await client.delete(
+            f"{webdav.url}/{new_filename}",
+            auth=(settings.test_webdav_username, settings.test_webdav_password),
         )
