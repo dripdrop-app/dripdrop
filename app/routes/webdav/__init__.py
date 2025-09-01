@@ -13,24 +13,20 @@ router = APIRouter(
 
 
 @router.get(
-    "/",
+    "",
     response_model=WebDavResponse,
     responses={status.HTTP_404_NOT_FOUND: {"description": "WebDAV not found."}},
 )
 async def get_webdav(user: AuthUser, db_session: DatabaseSession):
     query = select(WebDav).where(WebDav.email == user.email)
     if webdav := await db_session.scalar(query):
-        return WebDavResponse(
-            username=WebDav.decrypt_value(webdav.username),
-            password=WebDav.decrypt_value(webdav.password),
-            url=webdav.url,
-        )
+        return WebDavResponse.model_validate(webdav)
     raise HTTPException(
         detail="WebDAV not found.", status_code=status.HTTP_404_NOT_FOUND
     )
 
 
-@router.post("/", response_model=WebDavResponse)
+@router.post("", response_model=WebDavResponse)
 async def update_webdav(
     user: AuthUser, db_session: DatabaseSession, body: Annotated[UpdateWebDav, Body()]
 ):
@@ -49,14 +45,10 @@ async def update_webdav(
         )
         db_session.add(webdav)
         await db_session.commit()
-    return WebDavResponse(
-        username=WebDav.decrypt_value(webdav.username),
-        password=WebDav.decrypt_value(webdav.password),
-        url=webdav.url,
-    )
+    return WebDavResponse.model_validate(body)
 
 
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_webdav(user: AuthUser, session: DatabaseSession):
     query = select(WebDav).where(WebDav.email == user.email)
     if webdav := await session.scalar(query):
