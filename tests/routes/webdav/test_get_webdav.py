@@ -1,7 +1,5 @@
-from faker import Faker
 from fastapi import status
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import User, WebDav
 
@@ -30,25 +28,19 @@ async def test_get_webdav_not_found(client: AsyncClient, create_and_login_user):
 
 async def test_get_webdav(
     client: AsyncClient,
-    db_session: AsyncSession,
     create_and_login_user,
-    faker: Faker,
+    create_webdav,
 ):
     """
     Test getting webdav when it exists. The endpoint should
     return a 200 response.
     """
     user: User = await create_and_login_user()
-    username = faker.user_name()
-    password = faker.password()
-    url = faker.url()
-    webdav = WebDav(email=user.email, username=username, password=password, url=url)
-    db_session.add(webdav)
-    await db_session.commit()
+    webdav: WebDav = await create_webdav(email=user.email)
 
     response = await client.get(URL)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["username"] == username
-    assert data["password"] == password
-    assert data["url"] == url
+    assert data["username"] == WebDav.decrypt_value(webdav.username)
+    assert data["password"] == WebDav.decrypt_value(webdav.password)
+    assert data["url"] == webdav.url

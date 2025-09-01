@@ -59,6 +59,7 @@ async def test_update_webdav_with_existing(
     client: AsyncClient,
     db_session: AsyncSession,
     create_and_login_user,
+    create_webdav,
     faker: Faker,
 ):
     """
@@ -68,17 +69,7 @@ async def test_update_webdav_with_existing(
     user: User = await create_and_login_user()
 
     # Create initial webdav
-    initial_username = faker.user_name()
-    initial_password = faker.password()
-    initial_url = faker.url()
-    webdav = WebDav(
-        email=user.email,
-        username=initial_username,
-        password=initial_password,
-        url=initial_url,
-    )
-    db_session.add(webdav)
-    await db_session.commit()
+    webdav = await create_webdav(email=user.email)
 
     updated_data = {
         "username": faker.user_name(),
