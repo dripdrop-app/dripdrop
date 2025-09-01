@@ -42,6 +42,9 @@ class User(Base):
     youtube_video_watches: Mapped[list["YoutubeVideoWatch"]] = relationship(
         "YoutubeVideoWatch", back_populates="user"
     )
+    webdav: Mapped["WebDav"] = relationship(
+        "WebDav", back_populates="user", uselist=False
+    )
 
     def set_password(self, new_password: str):
         self.password = self.hash_password(new_password)
