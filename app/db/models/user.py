@@ -18,6 +18,8 @@ if TYPE_CHECKING:
         YoutubeVideoWatch,
     )
 
+fernet = Fernet(bytes(settings.fernet_key, encoding="utf-8"))
+
 
 class User(Base):
     __tablename__ = "users"
@@ -88,13 +90,11 @@ class WebDav(Base):
 
     @classmethod
     def encrypt_value(cls, value: str):
-        fernet = Fernet(settings.fernet_key)
         return str(fernet.encrypt(bytes(value, encoding="utf-8")), encoding="utf-8")
 
     @classmethod
     def decrypt_value(cls, value: str):
-        fernet = Fernet(settings.fernet_key)
-        return str(fernet.decrypt(bytes(value, encoding="utf-8")), encoding="utf-8")
+        return str(fernet.decrypt(value), encoding="utf-8")
 
 
 @event.listens_for(WebDav, "init")
@@ -103,3 +103,9 @@ def init_webdav(target: WebDav, args, kwargs):
         kwargs["username"] = WebDav.encrypt_value(kwargs["username"])
     if "password" in kwargs:
         kwargs["password"] = WebDav.encrypt_value(kwargs["password"])
+
+
+@event.listens_for(WebDav, "load")
+def load_webdav(target: WebDav, context):
+    target.username = WebDav.decrypt_value(target.username)
+    target.password = WebDav.decrypt_value(target.password)
