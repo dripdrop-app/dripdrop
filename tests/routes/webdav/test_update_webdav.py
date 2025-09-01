@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import User, WebDav
 
-URL = "/api/webdav/"
+URL = "/api/webdav"
 
 
 async def test_update_webdav_when_not_logged_in(client: AsyncClient, faker: Faker):
@@ -25,7 +25,7 @@ async def test_update_webdav_when_not_logged_in(client: AsyncClient, faker: Fake
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-async def test_update_webdav_creates_new(
+async def test_update_webdav_creating(
     client: AsyncClient,
     db_session: AsyncSession,
     create_and_login_user,
@@ -36,11 +36,6 @@ async def test_update_webdav_creates_new(
     endpoint should create a new configuration and return a 200 status.
     """
     user: User = await create_and_login_user()
-
-    # Ensure no webdav exists yet
-    query = select(WebDav).where(WebDav.email == user.email)
-    assert await db_session.scalar(query) is None
-
     new_data = {
         "username": faker.user_name(),
         "password": faker.password(),
@@ -52,14 +47,15 @@ async def test_update_webdav_creates_new(
     assert response.json() == new_data
 
     # Verify in DB
+    query = select(WebDav).where(WebDav.email == user.email)
     webdav = await db_session.scalar(query)
     assert webdav is not None
-    assert WebDav.decrypt_value(webdav.username) == new_data["username"]
-    assert WebDav.decrypt_value(webdav.password) == new_data["password"]
+    assert webdav.username == new_data["username"]
+    assert webdav.password == new_data["password"]
     assert webdav.url == new_data["url"]
 
 
-async def test_update_webdav_updates_existing(
+async def test_update_webdav_with_existing(
     client: AsyncClient,
     db_session: AsyncSession,
     create_and_login_user,
@@ -77,8 +73,8 @@ async def test_update_webdav_updates_existing(
     initial_url = faker.url()
     webdav = WebDav(
         email=user.email,
-        username=WebDav.encrypt_value(initial_username),
-        password=WebDav.encrypt_value(initial_password),
+        username=initial_username,
+        password=initial_password,
         url=initial_url,
     )
     db_session.add(webdav)
@@ -96,6 +92,6 @@ async def test_update_webdav_updates_existing(
 
     # Verify in DB
     await db_session.refresh(webdav)
-    assert WebDav.decrypt_value(webdav.username) == updated_data["username"]
-    assert WebDav.decrypt_value(webdav.password) == updated_data["password"]
+    assert webdav.username == updated_data["username"]
+    assert webdav.password == updated_data["password"]
     assert webdav.url == updated_data["url"]

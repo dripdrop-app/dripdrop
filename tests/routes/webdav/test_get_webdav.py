@@ -42,12 +42,7 @@ async def test_get_webdav(
     username = faker.user_name()
     password = faker.password()
     url = faker.url()
-    webdav = WebDav(
-        email=user.email,
-        username=WebDav.encrypt_value(username),
-        password=WebDav.encrypt_value(password),
-        url=url,
-    )
+    webdav = WebDav(email=user.email, username=username, password=password, url=url)
     db_session.add(webdav)
     await db_session.commit()
 
