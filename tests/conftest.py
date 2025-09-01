@@ -13,6 +13,7 @@ from app.db import (
     Base,
     MusicJob,
     User,
+    WebDav,
     YoutubeChannel,
     YoutubeSubscription,
     YoutubeVideo,
@@ -302,5 +303,23 @@ async def create_youtube_video(
         db_session.add(video)
         await db_session.commit()
         return video
+
+    return _run
+
+
+@pytest.fixture(scope="function")
+async def create_webdav(db_session: AsyncSession, faker: Faker):
+    async def _run(
+        email: str, username: str = None, password: str = None, url: str = None
+    ):
+        webdav = WebDav(
+            email=email,
+            username=username or faker.user_name(),
+            password=password or faker.password(),
+            url=url or faker.url(),
+        )
+        db_session.add(webdav)
+        await db_session.commit()
+        return webdav
 
     return _run
