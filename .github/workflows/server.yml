@@ -33,7 +33,7 @@ jobs:
           method: "universal"
           client-id: ${{ secrets.INFISCAL_CLIENT_ID }}
           client-secret: ${{ secrets.INFISCAL_CLIENT_SECRET }}
-          project-slug: "dripdrop"
+          project-slug: "dripdrop-1-hbh"
           env-slug: "development"
           export-type: "file"
           file-output-path: ".env"
