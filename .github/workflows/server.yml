@@ -36,9 +36,9 @@ jobs:
           project-slug: "dripdrop-1-hbh"
           env-slug: "dev"
           export-type: "file"
-          file-output-path: ".env"
       - name: Add default values to .env file
         run: |
+          printf "\n" >> .env
           echo "ASYNC_DATABASE_URL=postgresql+asyncpg://dripdrop:dripdrop@postgres/dripdrop" >> .env
           echo "REDIS_URL=redis://redis:6379" >> .env
           echo "TEST_ASYNC_DATABASE_URL=postgresql+asyncpg://dripdrop:dripdrop@postgres/dripdrop" >> .env
