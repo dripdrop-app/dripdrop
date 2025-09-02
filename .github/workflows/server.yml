@@ -51,6 +51,10 @@ jobs:
           echo "TEST_WEBDAV_USERNAME=${{ secrets.TEST_WEBDAV_USERNAME }}" >> .env
           echo "TEST_WEBDAV_PASSWORD='${{ secrets.TEST_WEBDAV_PASSWORD }}'" >> .env
           docker compose --profile prod --env-file .env run --rm server test
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
   deploy:
     if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-latest
