@@ -34,7 +34,7 @@ jobs:
           client-id: ${{ secrets.INFISCAL_CLIENT_ID }}
           client-secret: ${{ secrets.INFISCAL_CLIENT_SECRET }}
           project-slug: "dripdrop-1-hbh"
-          env-slug: "development"
+          env-slug: "dev"
           export-type: "file"
           file-output-path: ".env"
       - name: Add default values to .env file
