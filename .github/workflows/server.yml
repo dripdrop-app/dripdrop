@@ -27,31 +27,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-      - name: Create .env file from secrets
+      - name: Retrieve infiscal secrets
+        uses: infisical/secrets-action@v1.0.12
+        with:
+          method: "universal"
+          client-id: ${{ secrets.INFISCAL_CLIENT_ID }}
+          client-secret: ${{ secrets.INFISCAL_CLIENT_SECRET }}
+          project-slug: "dripdrop"
+          env-slug: "development"
+          export-type: "file"
+          file-output-path: ".env"
+      - name: Add default values to .env file
         run: |
-          printf "ASYNC_DATABASE_URL=%q\n" "postgresql+asyncpg://dripdrop:dripdrop@postgres/dripdrop" >> .env
-          printf "AWS_ACCESS_KEY_ID=%q\n" "${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
-          printf "AWS_ENDPOINT_URL=%q\n" "${{ secrets.AWS_ENDPOINT_URL }}" >> .env
-          printf "AWS_REGION_NAME=%q\n" "${{ secrets.AWS_REGION_NAME }}" >> .env
-          printf "AWS_SECRET_ACCESS_KEY=%q\n" "${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
-          printf "AWS_S3_ARTWORK_FOLDER=%q\n" "${{ secrets.AWS_S3_ARTWORK_FOLDER }}" >> .env
-          printf "AWS_S3_BUCKET=%q\n" "${{ secrets.AWS_S3_BUCKET }}" >> .env
-          printf "AWS_S3_MUSIC_FOLDER=%q\n" "${{ secrets.AWS_S3_MUSIC_FOLDER }}" >> .env
-          printf "FERNET_KEY=%q\n" "${{ secrets.FERNET_KEY }}" >> .env
-          printf "GOOGLE_API_KEY=%q\n" "${{ secrets.GOOGLE_API_KEY }}" >> .env
-          printf "INVIDIOUS_API_URL=%q\n" "${{ secrets.INVIDIOUS_API_URL }}" >> .env
-          printf "REDIS_URL=%q\n" "redis://redis:6379" >> .env
-          printf "SECRET_KEY=%q\n" "${{ secrets.SECRET_KEY }}" >> .env
-          printf "SENDGRID_API_KEY=%q\n" "${{ secrets.SENDGRID_API_KEY }}" >> .env
-          printf "SMTP2GO_API_KEY=%q\n" "${{ secrets.SMTP2GO_API_KEY }}" >> .env
-          printf "TEST_AWS_S3_BUCKET=%q\n" "${{ secrets.TEST_AWS_S3_BUCKET }}" >> .env
-          printf "TEST_ASYNC_DATABASE_URL=%q\n" "postgresql+asyncpg://dripdrop:dripdrop@postgres/dripdrop" >> .env
-          printf "TEST_REDIS_URL=%q\n" "redis://redis:6379" >> .env
-          printf "TEST_WEBDAV_URL=%q\n" "${{ secrets.TEST_WEBDAV_URL }}" >> .env
-          printf "TEST_WEBDAV_USERNAME=%q\n" "${{ secrets.TEST_WEBDAV_USERNAME }}" >> .env
-          printf "TEST_WEBDAV_PASSWORD=%q\n" "${{ secrets.TEST_WEBDAV_PASSWORD }}" >> .env
+          echo "ASYNC_DATABASE_URL=postgresql+asyncpg://dripdrop:dripdrop@postgres/dripdrop" >> .env
+          echo "REDIS_URL=redis://redis:6379" >> .env
+          echo "TEST_ASYNC_DATABASE_URL=postgresql+asyncpg://dripdrop:dripdrop@postgres/dripdrop" >> .env
+          echo "TEST_REDIS_URL=redis://redis:6379" >> .env
       - name: Run tests
         run: docker compose --profile prod --env-file .env run --rm server test
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
   deploy:
     if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-latest
