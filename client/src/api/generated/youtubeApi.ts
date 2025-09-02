@@ -47,7 +47,11 @@ const injectedRtkApi = api.injectEndpoints({
       UpdateUserYoutubeChannelApiYoutubeChannelsUserPostApiResponse,
       UpdateUserYoutubeChannelApiYoutubeChannelsUserPostApiArg
     >({
-      query: (queryArg) => ({ url: `/api/youtube/channels/user`, method: "POST", body: queryArg }),
+      query: (queryArg) => ({
+        url: `/api/youtube/channels/user`,
+        method: "POST",
+        body: queryArg,
+      }),
     }),
     getYoutubeChannelApiYoutubeChannelsChannelIdGet: build.query<
       GetYoutubeChannelApiYoutubeChannelsChannelIdGetApiResponse,
@@ -92,31 +96,46 @@ const injectedRtkApi = api.injectEndpoints({
       AddYoutubeVideoWatchApiYoutubeVideosVideoIdWatchPutApiResponse,
       AddYoutubeVideoWatchApiYoutubeVideosVideoIdWatchPutApiArg
     >({
-      query: (queryArg) => ({ url: `/api/youtube/videos/${queryArg}/watch`, method: "PUT" }),
+      query: (queryArg) => ({
+        url: `/api/youtube/videos/${queryArg}/watch`,
+        method: "PUT",
+      }),
     }),
     addYoutubeVideoLikeApiYoutubeVideosVideoIdLikePut: build.mutation<
       AddYoutubeVideoLikeApiYoutubeVideosVideoIdLikePutApiResponse,
       AddYoutubeVideoLikeApiYoutubeVideosVideoIdLikePutApiArg
     >({
-      query: (queryArg) => ({ url: `/api/youtube/videos/${queryArg}/like`, method: "PUT" }),
+      query: (queryArg) => ({
+        url: `/api/youtube/videos/${queryArg}/like`,
+        method: "PUT",
+      }),
     }),
     deleteYoutubeVideoLikeApiYoutubeVideosVideoIdLikeDelete: build.mutation<
       DeleteYoutubeVideoLikeApiYoutubeVideosVideoIdLikeDeleteApiResponse,
       DeleteYoutubeVideoLikeApiYoutubeVideosVideoIdLikeDeleteApiArg
     >({
-      query: (queryArg) => ({ url: `/api/youtube/videos/${queryArg}/like`, method: "DELETE" }),
+      query: (queryArg) => ({
+        url: `/api/youtube/videos/${queryArg}/like`,
+        method: "DELETE",
+      }),
     }),
     addYoutubeVideoQueueApiYoutubeVideosVideoIdQueuePut: build.mutation<
       AddYoutubeVideoQueueApiYoutubeVideosVideoIdQueuePutApiResponse,
       AddYoutubeVideoQueueApiYoutubeVideosVideoIdQueuePutApiArg
     >({
-      query: (queryArg) => ({ url: `/api/youtube/videos/${queryArg}/queue`, method: "PUT" }),
+      query: (queryArg) => ({
+        url: `/api/youtube/videos/${queryArg}/queue`,
+        method: "PUT",
+      }),
     }),
     deleteYoutubeVideoQueueApiYoutubeVideosVideoIdQueueDelete: build.mutation<
       DeleteYoutubeVideoQueueApiYoutubeVideosVideoIdQueueDeleteApiResponse,
       DeleteYoutubeVideoQueueApiYoutubeVideosVideoIdQueueDeleteApiArg
     >({
-      query: (queryArg) => ({ url: `/api/youtube/videos/${queryArg}/queue`, method: "DELETE" }),
+      query: (queryArg) => ({
+        url: `/api/youtube/videos/${queryArg}/queue`,
+        method: "DELETE",
+      }),
     }),
     runUpdateSubscriptionsApiAdminYoutubeUpdateSubscriptionsGet: build.query<
       RunUpdateSubscriptionsApiAdminYoutubeUpdateSubscriptionsGetApiResponse,

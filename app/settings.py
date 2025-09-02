@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     aws_s3_bucket: str
     aws_s3_music_folder: str
     env: ENV = ENV.DEVELOPMENT
+    fernet_key: str
     google_api_key: str
     invidious_api_url: str
     redis_url: str
@@ -31,6 +32,9 @@ class Settings(BaseSettings):
     test_async_database_url: str
     test_aws_s3_bucket: str
     test_redis_url: str
+    test_webdav_password: str
+    test_webdav_url: str
+    test_webdav_username: str
     timeout: int = 600
     timezone: tz | None = tz.utc
 

@@ -13,6 +13,7 @@ export const Tags = {
   YOUTUBE_LIKE_VIDEOS: "YoutubeLikeVideos",
   YOUTUBE_QUEUE_VIDEOS: "YoutubeQueueVideos",
   USER: "User",
+  WEBDAV: "WebDav",
 };
 
 export const tags = [
@@ -30,4 +31,5 @@ export const tags = [
   Tags.YOUTUBE_LIKE_VIDEOS,
   Tags.YOUTUBE_QUEUE_VIDEOS,
   Tags.USER,
+  Tags.WEBDAV,
 ];

@@ -5,9 +5,10 @@ from pathlib import Path
 import aiofiles
 import aiofiles.os
 import httpx
+from sqlalchemy import select
 from yt_dlp.utils import sanitize_filename
 
-from app.db import MusicJob
+from app.db import MusicJob, WebDav
 from app.models.music import MusicJobUpdateResponse
 from app.services import audiotags, ffmpeg, imagedownloader, s3, tempfiles, ytdlp
 from app.services.pubsub import PubSub
@@ -116,22 +117,37 @@ async def run_music_job(self: QueueTask, music_job_id: str):
             artwork_info=artwork_info,
         )
 
-        new_filename = "{folder}/{job_id}/{title} {artist}.mp3".format(
-            folder=settings.aws_s3_music_folder,
-            job_id=str(music_job.id),
+        new_filename = "{title} {artist}.mp3".format(
             title=sanitize_filename(music_job.title.lower()),
             artist=sanitize_filename(music_job.artist.lower()),
         )
+        new_filepath = "{folder}/{job_id}/{filename}".format(
+            folder=settings.aws_s3_music_folder,
+            job_id=str(music_job.id),
+            filename=new_filename,
+        )
+
+        query = select(WebDav).where(WebDav.email == music_job.user_email)
+        webdav = await db_session.scalar(query)
 
         async with aiofiles.open(filename, mode="rb") as f:
+            file_content = await f.read()
             await s3.upload_file(
-                filename=new_filename,
-                body=await f.read(),
+                filename=new_filepath,
+                body=file_content,
                 content_type="audio/mpeg",
             )
+            if webdav:
+                async with httpx.AsyncClient() as client:
+                    response = await client.put(
+                        f"{webdav.url}/{new_filename}",
+                        content=file_content,
+                        auth=(webdav.username, webdav.password),
+                    )
+                    response.raise_for_status()
 
-        music_job.download_filename = new_filename
-        music_job.download_url = s3.resolve_url(filename=new_filename)
+        music_job.download_filename = new_filepath
+        music_job.download_url = s3.resolve_url(filename=new_filepath)
         music_job.completed = datetime.now(timezone.utc)
         await db_session.commit()
 

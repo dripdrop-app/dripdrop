@@ -1,16 +1,22 @@
 const config = {
   schemaFile: "http://localhost:8000/api/openapi.json",
-  apiFile: "./api/generated/api.ts",
+  apiFile: "./src/api/generated/api.ts",
   apiImport: "api",
   outputFiles: {
-    "./api/generated/musicApi.ts": {
+    "./src/api/generated/musicApi.ts": {
       filterEndpoints: [/music/i],
     },
-    "./api/generated/authApi.ts": {
+    "./src/api/generated/authApi.ts": {
       filterEndpoints: [/auth/i],
     },
-    "./api/generated/youtubeApi.ts": {
+    "./src/api/generated/youtubeApi.ts": {
       filterEndpoints: [/youtube/i],
+    },
+    "./src/api/generated/adminApi.ts": {
+      filterEndpoints: [/admin/i],
+    },
+    "./src/api/generated/webdavApi.ts": {
+      filterEndpoints: [/webdav/i],
     },
   },
   exportName: "api",

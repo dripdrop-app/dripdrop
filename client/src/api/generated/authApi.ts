@@ -8,7 +8,11 @@ const injectedRtkApi = api.injectEndpoints({
       query: () => ({ url: `/api/auth/session` }),
     }),
     loginApiAuthLoginPost: build.mutation<LoginApiAuthLoginPostApiResponse, LoginApiAuthLoginPostApiArg>({
-      query: (queryArg) => ({ url: `/api/auth/login`, method: "POST", body: queryArg }),
+      query: (queryArg) => ({
+        url: `/api/auth/login`,
+        method: "POST",
+        body: queryArg,
+      }),
     }),
     logoutApiAuthLogoutDelete: build.mutation<LogoutApiAuthLogoutDeleteApiResponse, LogoutApiAuthLogoutDeleteApiArg>({
       query: () => ({ url: `/api/auth/logout`, method: "DELETE" }),
@@ -17,7 +21,11 @@ const injectedRtkApi = api.injectEndpoints({
       CreateAccountApiAuthCreatePostApiResponse,
       CreateAccountApiAuthCreatePostApiArg
     >({
-      query: (queryArg) => ({ url: `/api/auth/create`, method: "POST", body: queryArg }),
+      query: (queryArg) => ({
+        url: `/api/auth/create`,
+        method: "POST",
+        body: queryArg,
+      }),
     }),
     verifyEmailApiAuthVerifyGet: build.query<VerifyEmailApiAuthVerifyGetApiResponse, VerifyEmailApiAuthVerifyGetApiArg>(
       {
@@ -33,13 +41,21 @@ const injectedRtkApi = api.injectEndpoints({
       SendResetEmailApiAuthSendresetPostApiResponse,
       SendResetEmailApiAuthSendresetPostApiArg
     >({
-      query: (queryArg) => ({ url: `/api/auth/sendreset`, method: "POST", body: queryArg }),
+      query: (queryArg) => ({
+        url: `/api/auth/sendreset`,
+        method: "POST",
+        body: queryArg,
+      }),
     }),
     resetPasswordApiAuthResetPost: build.mutation<
       ResetPasswordApiAuthResetPostApiResponse,
       ResetPasswordApiAuthResetPostApiArg
     >({
-      query: (queryArg) => ({ url: `/api/auth/reset`, method: "POST", body: queryArg }),
+      query: (queryArg) => ({
+        url: `/api/auth/reset`,
+        method: "POST",
+        body: queryArg,
+      }),
     }),
   }),
   overrideExisting: false,
