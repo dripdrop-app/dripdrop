@@ -45,10 +45,6 @@ jobs:
           echo "TEST_REDIS_URL=redis://redis:6379" >> .env
       - name: Run tests
         run: docker compose --profile prod --env-file .env run --rm server test
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 15
   deploy:
     if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-latest
