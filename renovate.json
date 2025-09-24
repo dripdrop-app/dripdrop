@@ -6,8 +6,24 @@
       "groupName": "mantine"
     },
     {
-      "matchPackageNames": ["react", "react-dom"],
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
       "groupName": "react"
+    },
+    {
+      "matchPackageNames": ["@reduxjs/toolkit", "react-redux"],
+      "groupName": "redux"
+    },
+    {
+      "matchPackagePatterns": ["^@vitejs/", "^vite"],
+      "groupName": "vite"
+    },
+    {
+      "matchPackagePatterns": ["^eslint"],
+      "groupName": "eslint"
+    },
+    {
+      "matchPackageNames": ["lodash", "@types/lodash"],
+      "groupName": "lodash"
     }
   ]
 }
