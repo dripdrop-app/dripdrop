@@ -77,7 +77,11 @@ const MusicForm = () => {
       }
       const status = await createMusicJob(formData as unknown as CreateMusicJob);
       if (!status.error) {
-        reset();
+        reset({
+          videoUrl: "",
+          artworkUrl: "",
+          title: "",
+        });
         successNotification();
       } else {
         errorNotification();
