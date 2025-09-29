@@ -12,6 +12,7 @@ import { VideoLikeButton, VideoQueueButton } from "./VideoButtons";
 import VideoPlayer from "./VideoPlayer";
 import { GetYoutubeVideosApiYoutubeVideosListGetApiArg as YoutubeVideosParams } from "../../api/generated/youtubeApi";
 import { createPortal } from "react-dom";
+import { useFooter } from "../../providers/FooterProvider";
 
 interface VideoAutoPlayerProps {
   initialParams: YoutubeVideosParams;
@@ -26,9 +27,9 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
   });
 
   const playerRef = useRef<ReactPlayer>(null);
-
   const [playing, { toggle: togglePlaying }] = useDisclosure(true);
   const [expand, { toggle: toggleExpand }] = useDisclosure(false);
+  const { footerRef } = useFooter();
 
   const videosStatus = useYoutubeVideosQuery(currentParams ?? skipToken, { skip: !currentParams });
 
@@ -50,8 +51,6 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
     return `${minutes}:${remainingSeconds < 10 ? `0${remainingSeconds}` : remainingSeconds}`;
   };
 
-  const appFooter = document.getElementById("app-footer");
-
   useEffect(() => {
     if (!currentParams) {
       setCurrentParams(initialParams);
@@ -70,7 +69,7 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
     }
   }, [currentParams, currentVideoIndex]);
 
-  if (!appFooter) {
+  if (!footerRef.current) {
     return null;
   }
 
@@ -145,21 +144,8 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
           >
             <CgPlayTrackPrev size={25} />
           </ActionIcon>
-          <ActionIcon
-            className="hover-darken"
-            variant="transparent"
-            style={{ ...(playing && { display: "none" }) }}
-            onClick={togglePlaying}
-          >
-            <FaPlay />
-          </ActionIcon>
-          <ActionIcon
-            className="hover-darken"
-            variant="transparent"
-            style={{ ...(!playing && { display: "none" }) }}
-            onClick={togglePlaying}
-          >
-            <FaPause />
+          <ActionIcon className="hover-darken" variant="transparent" onClick={togglePlaying}>
+            {playing ? <FaPause /> : <FaPlay />}
           </ActionIcon>
           <ActionIcon
             className="hover-darken"
@@ -169,25 +155,12 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
             <CgPlayTrackNext size={25} />
           </ActionIcon>
         </Group>
-        <ActionIcon
-          className="hover-darken"
-          variant="transparent"
-          style={{ ...(expand && { display: "none" }) }}
-          onClick={toggleExpand}
-        >
-          <FaAngleUp />
-        </ActionIcon>
-        <ActionIcon
-          className="hover-darken"
-          variant="transparent"
-          style={{ ...(!expand && { display: "none" }) }}
-          onClick={toggleExpand}
-        >
-          <FaAngleDown />
+        <ActionIcon className="hover-darken" variant="transparent" onClick={toggleExpand}>
+          {expand ? <FaAngleDown /> : <FaAngleUp />}
         </ActionIcon>
       </Group>
     </Stack>,
-    appFooter
+    footerRef.current
   );
 };
 

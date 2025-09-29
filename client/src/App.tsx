@@ -12,6 +12,7 @@ import { Account, CreateAccount, Login, PrivacyPolicy, TermsOfService, VerifyAcc
 import { useCheckSessionQuery } from "./api/auth";
 import { MusicDownloader } from "./pages/Music";
 import { YoutubeChannel, YoutubeSubscriptions, YoutubeVideo, YoutubeVideos } from "./pages/Youtube";
+import { useFooter } from "./providers/FooterProvider";
 
 const AuthenticatedRoute = () => {
   const sessionStatus = useCheckSessionQuery();
@@ -33,10 +34,9 @@ const AuthenticatedRoute = () => {
 
 const App = () => {
   const [openedSideBar, handlers] = useDisclosure(false);
-
   const sessionStatus = useCheckSessionQuery();
-
   const location = useLocation();
+  const { displayFooter, footerRef } = useFooter();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -75,6 +75,7 @@ const App = () => {
         <AppShell
           padding="md"
           header={{ height: 60 }}
+          footer={{ height: 100 }}
           navbar={{
             width: 200,
             breakpoint: "sm",
@@ -91,7 +92,7 @@ const App = () => {
             </Flex>
           </AppShell.Header>
           {sessionStatus.isSuccess && (
-            <AppShell.Navbar p="sm">
+            <AppShell.Navbar p="sm" zIndex={101}>
               <AppShell.Section grow>
                 <NavLink
                   component={Link}
@@ -149,9 +150,11 @@ const App = () => {
               <Route path="*" element={<Navigate to="music/downloader" replace />} />
             </Routes>
           </AppShell.Main>
-          <AppShell.Footer>
-            <div id="app-footer"></div>
-          </AppShell.Footer>
+          {displayFooter && (
+            <AppShell.Footer>
+              <div ref={footerRef}></div>
+            </AppShell.Footer>
+          )}
         </AppShell>
       </ModalsProvider>
     </MantineProvider>

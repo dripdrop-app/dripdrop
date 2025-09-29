@@ -11,6 +11,7 @@ import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@mantine/dropzone/styles.css";
 import "./main.css";
+import { FooterProvider } from "./providers/FooterProvider";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
@@ -18,7 +19,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <Provider store={store}>
         <HelmetProvider>
           <Helmet titleTemplate="%s | dripdrop" defaultTitle="dripdrop" />
-          <App />
+          <FooterProvider>
+            <App />
+          </FooterProvider>
         </HelmetProvider>
       </Provider>
     </BrowserRouter>
