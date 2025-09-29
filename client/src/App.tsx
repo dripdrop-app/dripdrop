@@ -81,7 +81,16 @@ const App = () => {
             collapsed: { desktop: false, mobile: !openedSideBar },
           }}
         >
-          {sessionStatus.isSuccess ? (
+          <AppShell.Header bg="blue.8">
+            <Flex align="center" direction="row" h="100%" mx="lg">
+              <Burger hiddenFrom="sm" opened={sessionStatus.isSuccess && openedSideBar} onClick={handlers.toggle} />
+              <Avatar alt="dripdrop" src="https://dripdrop-prod.nyc3.cdn.digitaloceanspaces.com/assets/dripdrop.png" />
+              <Title c="white" order={3} fw={600}>
+                dripdrop
+              </Title>
+            </Flex>
+          </AppShell.Header>
+          {sessionStatus.isSuccess && (
             <AppShell.Navbar p="sm">
               <AppShell.Section grow>
                 <NavLink
@@ -120,16 +129,7 @@ const App = () => {
                 />
               </AppShell.Section>
             </AppShell.Navbar>
-          ) : undefined}
-          <AppShell.Header bg="blue.8">
-            <Flex align="center" direction="row" h="100%" mx="lg">
-              <Burger hiddenFrom="sm" opened={sessionStatus.isSuccess && openedSideBar} onClick={handlers.toggle} />
-              <Avatar alt="dripdrop" src="https://dripdrop-prod.nyc3.cdn.digitaloceanspaces.com/assets/dripdrop.png" />
-              <Title c="white" order={3} fw={600}>
-                dripdrop
-              </Title>
-            </Flex>
-          </AppShell.Header>
+          )}
           <AppShell.Main>
             <Routes>
               <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -149,6 +149,9 @@ const App = () => {
               <Route path="*" element={<Navigate to="music/downloader" replace />} />
             </Routes>
           </AppShell.Main>
+          <AppShell.Footer>
+            <div id="app-footer"></div>
+          </AppShell.Footer>
         </AppShell>
       </ModalsProvider>
     </MantineProvider>
