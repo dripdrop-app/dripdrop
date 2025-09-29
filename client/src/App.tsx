@@ -75,7 +75,7 @@ const App = () => {
         <AppShell
           padding="md"
           header={{ height: 60 }}
-          footer={{ height: 100 }}
+          footer={{ height: displayFooter ? 100 : 0 }}
           navbar={{
             width: 200,
             breakpoint: "sm",
