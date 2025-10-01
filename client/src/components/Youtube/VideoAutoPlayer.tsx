@@ -25,10 +25,10 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
     duration: 0,
     played: 0,
   });
+  const [playing, setPlaying] = useState(true);
   const hiddenPlayerRef = useRef<ReactPlayer | null>(null);
   const modalPlayerRef = useRef<ReactPlayer | null>(null);
 
-  const [playing, { toggle: togglePlaying }] = useDisclosure(true);
   const [expand, { toggle: toggleExpand }] = useDisclosure(false);
   const { footerRef } = useFooter();
 
@@ -118,6 +118,12 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
           video={currentVideo}
           playing={playing}
           height="75vh"
+          onPause={() => {
+            setPlaying(false);
+          }}
+          onPlay={() => {
+            setPlaying(true);
+          }}
           onReady={() => {
             if (videoProgress.played) {
               modalPlayerRef.current?.seekTo(videoProgress.played, "seconds");
@@ -172,7 +178,7 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
           >
             <CgPlayTrackPrev size={25} />
           </ActionIcon>
-          <ActionIcon className="hover-darken" variant="transparent" onClick={togglePlaying}>
+          <ActionIcon className="hover-darken" variant="transparent" onClick={() => setPlaying(!playing)}>
             {playing ? <FaPause /> : <FaPlay />}
           </ActionIcon>
           <ActionIcon
