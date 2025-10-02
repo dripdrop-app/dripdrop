@@ -1,6 +1,20 @@
-import { ActionIcon, Avatar, Group, Modal, Slider, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Avatar,
+  Box,
+  Center,
+  Divider,
+  Group,
+  Indicator,
+  Modal,
+  Pagination,
+  Slider,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { skipToken } from "@reduxjs/toolkit/query/react";
-import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 import { CgPlayTrackNext, CgPlayTrackPrev } from "react-icons/cg";
 import { FaAngleUp, FaPause, FaPlay } from "react-icons/fa";
 
@@ -17,6 +31,60 @@ import { useFooter } from "../../providers/FooterProvider";
 interface VideoAutoPlayerProps {
   initialParams: YoutubeVideosParams;
 }
+
+interface VideoAutoPlayerQueueProps {
+  initialParams: YoutubeVideosParams;
+  currentVideoId?: string;
+  onClick: (params: YoutubeVideosParams, videoIndex: number) => void;
+}
+
+const VideoAutoPlayerQueue: FunctionComponent<VideoAutoPlayerQueueProps> = ({
+  initialParams,
+  onClick,
+  currentVideoId,
+}) => {
+  const [currentParams, setCurrentParams] = useState<YoutubeVideosParams>(initialParams);
+
+  const videosStatus = useYoutubeVideosQuery(currentParams);
+
+  const totalPages = useMemo(() => videosStatus.data?.totalPages ?? 1, [videosStatus.data]);
+  const videos = useMemo(() => videosStatus.data?.videos ?? [], [videosStatus.data]);
+
+  return (
+    <Stack h="100%">
+      <Title order={4}>Queue</Title>
+      <Box style={{ overflowX: "hidden", overflowY: "auto" }}>
+        {videos.map((video, i) => {
+          return (
+            <Fragment key={video.id}>
+              <Box className="hover-brighten" style={{ cursor: "pointer" }} onClick={() => onClick(currentParams, i)}>
+                <Group gap="sm" p="xs" wrap="nowrap">
+                  <Indicator processing size={16} disabled={video.id !== currentVideoId}>
+                    <Avatar size="md" src={video.thumbnail} style={{ borderRadius: 10 }} />
+                  </Indicator>
+                  <Stack gap={0} style={{ overflowX: "hidden" }}>
+                    <Text truncate="end">{video.title}</Text>
+                    <Text c="dimmed" truncate="end">
+                      {video.channel.title}
+                    </Text>
+                  </Stack>
+                </Group>
+              </Box>
+              <Divider />
+            </Fragment>
+          );
+        })}
+      </Box>
+      <Center>
+        <Pagination
+          total={totalPages}
+          value={currentParams?.page}
+          onChange={(newPage) => setCurrentParams({ ...currentParams, page: newPage })}
+        />
+      </Center>
+    </Stack>
+  );
+};
 
 const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParams }) => {
   const [currentParams, setCurrentParams] = useState<YoutubeVideosParams | undefined>();
@@ -94,10 +162,10 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
       />
       {!expand && (
         <VideoPlayer
+          style={{ display: "none" }}
           ref={hiddenPlayerRef}
           video={currentVideo}
           playing={playing}
-          height="0px"
           onReady={() => {
             if (videoProgress.played) {
               hiddenPlayerRef.current?.seekTo(videoProgress.played, "seconds");
@@ -113,35 +181,52 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
         />
       )}
       <Modal opened={expand} onClose={toggleExpand} size="lg" title={currentVideo?.title}>
-        <VideoPlayer
-          ref={modalPlayerRef}
-          video={currentVideo}
-          playing={playing}
-          height="75vh"
-          onPause={() => {
-            setPlaying(false);
-          }}
-          onPlay={() => {
-            setPlaying(true);
-          }}
-          onReady={() => {
-            if (videoProgress.played) {
-              modalPlayerRef.current?.seekTo(videoProgress.played, "seconds");
-            }
-          }}
-          onDuration={(duration) => {
-            setVideoProgress({ ...videoProgress, duration });
-          }}
-          onProgress={(state) => {
-            setVideoProgress({ ...videoProgress, played: state.playedSeconds });
-          }}
-          onEnd={() => setCurrentVideoIndex(currentVideoIndex + 1)}
-        />
+        <Stack>
+          <VideoPlayer
+            ref={modalPlayerRef}
+            video={currentVideo}
+            playing={playing}
+            height="47vh"
+            onPause={() => {
+              setPlaying(false);
+            }}
+            onPlay={() => {
+              setPlaying(true);
+            }}
+            onReady={() => {
+              if (videoProgress.played) {
+                modalPlayerRef.current?.seekTo(videoProgress.played, "seconds");
+              }
+            }}
+            onDuration={(duration) => {
+              setVideoProgress({ ...videoProgress, duration });
+            }}
+            onProgress={(state) => {
+              setVideoProgress({ ...videoProgress, played: state.playedSeconds });
+            }}
+            onEnd={() => setCurrentVideoIndex(currentVideoIndex + 1)}
+          />
+          <Box h="30vh">
+            {currentParams && (
+              <VideoAutoPlayerQueue
+                initialParams={currentParams}
+                onClick={(newParams, newVideoIndex) => {
+                  setCurrentParams(newParams);
+                  setCurrentVideoIndex(newVideoIndex);
+                  setVideoProgress({ duration: 0, played: 0 });
+                  hiddenPlayerRef.current?.seekTo(0, "seconds");
+                  modalPlayerRef.current?.seekTo(0, "seconds");
+                }}
+                currentVideoId={currentVideo?.id}
+              />
+            )}
+          </Box>
+        </Stack>
       </Modal>
       <Group w={{ base: "90%", md: "95%" }} gap="xl" justify="center" wrap="nowrap" style={{ overflowX: "hidden" }}>
         <Group wrap="nowrap" style={{ overflowX: "hidden" }}>
           <Avatar size="md" src={currentVideo?.thumbnail} style={{ borderRadius: 10 }} />
-          <Stack gap={0}>
+          <Stack gap={0} style={{ overflowX: "hidden" }}>
             <Text
               component={Link}
               className="hover-underline"
