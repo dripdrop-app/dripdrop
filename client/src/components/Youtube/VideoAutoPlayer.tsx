@@ -178,6 +178,8 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
             ref={hiddenPlayerRef}
             video={currentVideo}
             playing={playing}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
             onReady={() => {
               if (videoProgress.played) {
                 hiddenPlayerRef.current?.seekTo(videoProgress.played, "seconds");
