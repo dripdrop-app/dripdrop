@@ -1,10 +1,9 @@
-import httpx
 import pytest
 from fastapi import BackgroundTasks, HTTPException, UploadFile, status
 
 from app.db import MusicJob, User
 from app.routes.music.jobs import delete_job
-from app.services import audiotags, s3
+from app.services import audiotags, httpclient, s3
 from app.settings import settings
 
 URL = "/api/music/jobs/{job_id}/delete"
@@ -129,7 +128,7 @@ async def test_delete_job_with_files(
     await db_session.refresh(music_job)
     assert music_job.deleted_at is not None
 
-    async with httpx.AsyncClient() as http_client:
+    async with httpclient.AsyncClient() as http_client:
         response = await http_client.get(music_job.filename_url)
         assert response.status_code == status.HTTP_403_FORBIDDEN
         response = await http_client.get(music_job.artwork_url)

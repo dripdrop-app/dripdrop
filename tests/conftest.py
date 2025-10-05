@@ -21,7 +21,7 @@ from app.db import (
     engine,
     session_maker,
 )
-from app.services import s3, tempfiles
+from app.services import httpclient, s3, tempfiles
 from app.services.pubsub import PubSub
 from app.settings import ENV, settings
 
@@ -168,7 +168,7 @@ async def test_audio_url():
 
 @pytest.fixture(scope="session")
 async def test_audio(test_audio_url):
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         response = await client.get(test_audio_url)
         assert response.is_success is True
         yield response.content
@@ -181,7 +181,7 @@ async def test_image_url():
 
 @pytest.fixture(scope="session")
 async def test_image(test_image_url):
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         response = await client.get(test_image_url)
         assert response.is_success is True
         yield response.content
