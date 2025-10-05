@@ -152,11 +152,7 @@ const App = () => {
               <Route path="*" element={<Navigate to="music/downloader" replace />} />
             </Routes>
           </AppShell.Main>
-          {displayFooter && (
-            <AppShell.Footer>
-              <div ref={footerRef}></div>
-            </AppShell.Footer>
-          )}
+          <AppShell.Footer display={displayFooter ? "block" : "none"} ref={footerRef}></AppShell.Footer>
           <div ref={overlayRef}></div>
         </AppShell>
       </ModalsProvider>
