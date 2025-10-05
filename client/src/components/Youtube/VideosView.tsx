@@ -1,10 +1,11 @@
 import { Center, Checkbox, Grid, Group, Loader, MultiSelect, Pagination, Stack } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useEffect, useMemo } from "react";
 
 import { useYoutubeVideoCategoriesQuery, useYoutubeVideosQuery } from "../../api/youtube";
 import useSearchParams from "../../utils/useSearchParams";
 import VideoAutoPlayer from "./VideoAutoPlayer";
 import YoutubeVideoCard from "./VideoCard";
+import { useFooter } from "../../providers/FooterProvider";
 
 interface VideosViewProps {
   channelId?: string;
@@ -25,19 +26,25 @@ const VideosView: FunctionComponent<VideosViewProps> = ({ channelId, enableAutoP
     likedOnly: false,
     queuedOnly: false,
   });
-
   const videosStatus = useYoutubeVideosQuery({
     ...params,
     videoCategories: params.videoCategories.map((id) => parseInt(id)),
     channelId,
   });
   const videoCategoriesStatus = useYoutubeVideoCategoriesQuery();
+  const { setDisplayFooter } = useFooter();
 
   const categories = useMemo(
     () => (videoCategoriesStatus.data ? videoCategoriesStatus.data.categories : []),
     [videoCategoriesStatus.data]
   );
   const { videos, totalPages } = useMemo(() => videosStatus.data ?? { videos: [], totalPages: 1 }, [videosStatus.data]);
+
+  useEffect(() => {
+    return () => {
+      setDisplayFooter(false);
+    };
+  }, [setDisplayFooter]);
 
   return (
     <Stack h="100%">

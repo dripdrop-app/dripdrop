@@ -12,6 +12,8 @@ import { Account, CreateAccount, Login, PrivacyPolicy, TermsOfService, VerifyAcc
 import { useCheckSessionQuery } from "./api/auth";
 import { MusicDownloader } from "./pages/Music";
 import { YoutubeChannel, YoutubeSubscriptions, YoutubeVideo, YoutubeVideos } from "./pages/Youtube";
+import { useFooter } from "./providers/FooterProvider";
+import { useOverlay } from "./providers/OverlayProvider";
 
 const AuthenticatedRoute = () => {
   const sessionStatus = useCheckSessionQuery();
@@ -33,10 +35,10 @@ const AuthenticatedRoute = () => {
 
 const App = () => {
   const [openedSideBar, handlers] = useDisclosure(false);
-
   const sessionStatus = useCheckSessionQuery();
-
   const location = useLocation();
+  const { displayFooter, footerRef } = useFooter();
+  const { overlayRef } = useOverlay();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -75,14 +77,24 @@ const App = () => {
         <AppShell
           padding="md"
           header={{ height: 60 }}
+          footer={{ height: displayFooter ? 100 : 0 }}
           navbar={{
             width: 200,
             breakpoint: "sm",
             collapsed: { desktop: false, mobile: !openedSideBar },
           }}
         >
-          {sessionStatus.isSuccess ? (
-            <AppShell.Navbar p="sm">
+          <AppShell.Header bg="blue.8">
+            <Flex align="center" direction="row" h="100%" mx="lg">
+              <Burger hiddenFrom="sm" opened={sessionStatus.isSuccess && openedSideBar} onClick={handlers.toggle} />
+              <Avatar alt="dripdrop" src="https://dripdrop-prod.nyc3.cdn.digitaloceanspaces.com/assets/dripdrop.png" />
+              <Title c="white" order={3} fw={600}>
+                dripdrop
+              </Title>
+            </Flex>
+          </AppShell.Header>
+          {sessionStatus.isSuccess && (
+            <AppShell.Navbar p="sm" zIndex={101}>
               <AppShell.Section grow>
                 <NavLink
                   component={Link}
@@ -120,16 +132,7 @@ const App = () => {
                 />
               </AppShell.Section>
             </AppShell.Navbar>
-          ) : undefined}
-          <AppShell.Header bg="blue.8">
-            <Flex align="center" direction="row" h="100%" mx="lg">
-              <Burger hiddenFrom="sm" opened={sessionStatus.isSuccess && openedSideBar} onClick={handlers.toggle} />
-              <Avatar alt="dripdrop" src="https://dripdrop-prod.nyc3.cdn.digitaloceanspaces.com/assets/dripdrop.png" />
-              <Title c="white" order={3} fw={600}>
-                dripdrop
-              </Title>
-            </Flex>
-          </AppShell.Header>
+          )}
           <AppShell.Main>
             <Routes>
               <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -149,6 +152,8 @@ const App = () => {
               <Route path="*" element={<Navigate to="music/downloader" replace />} />
             </Routes>
           </AppShell.Main>
+          <AppShell.Footer display={displayFooter ? "block" : "none"} ref={footerRef}></AppShell.Footer>
+          <div ref={overlayRef}></div>
         </AppShell>
       </ModalsProvider>
     </MantineProvider>

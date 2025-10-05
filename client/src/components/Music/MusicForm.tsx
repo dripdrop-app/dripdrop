@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { useLazyArtworkQuery, useCreateJobMutation, useLazyGroupingQuery, useTagsMutation } from "../../api/music";
-import { isBase64, isValidImage, isValidLink, resolveAlbumFromTitle } from "../../utils/helpers";
+import { isBase64, isValidImage, resolveAlbumFromTitle } from "../../utils/helpers";
 import { CreateMusicJob } from "../../api/generated/musicApi";
 
 const MusicForm = () => {
@@ -77,7 +77,11 @@ const MusicForm = () => {
       }
       const status = await createMusicJob(formData as unknown as CreateMusicJob);
       if (!status.error) {
-        reset();
+        reset({
+          videoUrl: "",
+          artworkUrl: "",
+          title: "",
+        });
         successNotification();
       } else {
         errorNotification();
@@ -91,7 +95,7 @@ const MusicForm = () => {
       if (artworkUrl) {
         if (isBase64(artworkUrl) || isValidImage(artworkUrl)) {
           return setValue("resolvedArtworkUrl", artworkUrl);
-        } else if (isValidLink(artworkUrl)) {
+        } else if (URL.canParse(artworkUrl)) {
           const status = await getArtwork(artworkUrl);
           if (status.isSuccess) {
             const { resolvedArtworkUrl } = status.data;
@@ -149,7 +153,7 @@ const MusicForm = () => {
   const resolveGrouping = useCallback(
     async (videoUrl: string) => {
       if (videoUrl) {
-        if (isValidLink(videoUrl)) {
+        if (URL.canParse(videoUrl)) {
           const status = await getGrouping(videoUrl);
           if (status.isSuccess) {
             const { grouping } = status.data;
@@ -179,7 +183,7 @@ const MusicForm = () => {
                 defaultValue={""}
                 rules={{
                   required: !watchFields.isFile,
-                  validate: (v) => (!watchFields.isFile ? isValidLink(v) : true),
+                  validate: (v) => (!watchFields.isFile ? URL.canParse(v) : true),
                 }}
                 render={({ field, fieldState }) => {
                   let error = "";
