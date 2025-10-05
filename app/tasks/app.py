@@ -6,7 +6,7 @@ from celery.schedules import crontab
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.settings import settings
+from app.settings import ENV, settings
 
 
 class QueueTask(Task):
@@ -53,14 +53,15 @@ celery.conf.update(
 def setup_periodic_tasks(sender: Celery, **kwargs):
     from app.tasks import youtube
 
-    sender.add_periodic_task(
-        crontab.from_string("0 * * * *"),
-        youtube.update_channel_videos.s(),
-    )
-    sender.add_periodic_task(
-        crontab.from_string("30 12 * * *"),
-        youtube.update_subscriptions.s(),
-    )
-    sender.add_periodic_task(
-        crontab.from_string("0 0 * * *"), youtube.update_video_categories.s()
-    )
+    if settings.env == ENV.PRODUCTION:
+        sender.add_periodic_task(
+            crontab.from_string("0 * * * *"),
+            youtube.update_channel_videos.s(),
+        )
+        sender.add_periodic_task(
+            crontab.from_string("30 12 * * *"),
+            youtube.update_subscriptions.s(),
+        )
+        sender.add_periodic_task(
+            crontab.from_string("0 0 * * *"), youtube.update_video_categories.s()
+        )

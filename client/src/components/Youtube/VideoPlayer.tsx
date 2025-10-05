@@ -12,12 +12,14 @@ interface VideoPlayerProps {
   onEnd?: () => void;
   onReady?: () => void;
   onProgress?: (state: OnProgressProps) => void;
+  onPlay?: () => void;
+  onPause?: () => void;
   height?: string;
   style?: React.CSSProperties;
 }
 
 const VideoPlayer = forwardRef<ReactPlayer, VideoPlayerProps>(
-  ({ video, onDuration, onProgress, onEnd, onReady, playing, height, style }, ref) => {
+  ({ video, onDuration, onProgress, onEnd, onReady, onPlay, onPause, playing, height, style }, ref) => {
     const [watchVideo] = useAddYoutubeVideoWatchMutation();
 
     return useMemo(
@@ -30,6 +32,16 @@ const VideoPlayer = forwardRef<ReactPlayer, VideoPlayerProps>(
           playing={playing}
           controls={true}
           url={`https://youtube.com/embed/${video?.id}`}
+          onPlay={() => {
+            if (onPlay) {
+              onPlay();
+            }
+          }}
+          onPause={() => {
+            if (onPause) {
+              onPause();
+            }
+          }}
           onReady={() => {
             if (onReady) {
               onReady();
@@ -57,7 +69,7 @@ const VideoPlayer = forwardRef<ReactPlayer, VideoPlayerProps>(
           }}
         />
       ),
-      [height, onDuration, onEnd, onReady, onProgress, playing, ref, style, video, watchVideo]
+      [ref, style, height, playing, video, onPlay, onPause, onReady, onDuration, onProgress, watchVideo, onEnd]
     );
   }
 );

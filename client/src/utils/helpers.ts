@@ -27,17 +27,8 @@ export const resolveAlbumFromTitle = (title: string) => {
 
 export const isBase64 = (url: string) => RegExp(/^data:(image\/.+)?;base64/).test(url);
 
-export const isValidLink = (url: string) => {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
 export const isValidImage = (url: string) => {
-  const isLink = isValidLink(url);
+  const isLink = URL.canParse(url);
   return isLink && RegExp(/\.(jpg|jpeg|png)$/).test(url);
 };
 

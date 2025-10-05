@@ -1,12 +1,12 @@
 from typing import Annotated
 
-import httpx
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy import select
 
 from app.db import WebDav
 from app.dependencies import AuthUser, DatabaseSession, get_authenticated_user
 from app.models.webdav import UpdateWebDav, WebDavResponse
+from app.services import httpclient
 
 router = APIRouter(
     prefix="/webdav", tags=["WebDAV"], dependencies=[Depends(get_authenticated_user)]
@@ -39,7 +39,7 @@ async def get_webdav(user: AuthUser, db_session: DatabaseSession):
 async def update_webdav(
     user: AuthUser, db_session: DatabaseSession, body: Annotated[UpdateWebDav, Body()]
 ):
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         try:
             response = await client.request(
                 "PROPFIND",

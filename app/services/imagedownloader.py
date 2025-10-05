@@ -6,6 +6,8 @@ import httpx
 from fake_useragent import UserAgent
 from pydantic import BaseModel
 
+from app.services import httpclient
+
 user_agent = UserAgent()
 
 
@@ -43,9 +45,7 @@ def _get_images(response: httpx.Response) -> list:
 
 
 async def resolve_artwork(artwork: str):
-    async with httpx.AsyncClient(
-        transport=httpx.AsyncHTTPTransport(retries=3)
-    ) as client:
+    async with httpclient.AsyncClient() as client:
         response = await client.get(artwork, headers={"User-Agent": user_agent.firefox})
         if response.is_success:
             if is_image_link(response=response):
@@ -61,7 +61,7 @@ async def resolve_artwork(artwork: str):
 
 
 async def retrieve_artwork(artwork_url: str):
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         response = await client.get(artwork_url)
         extension = response.headers.get("Content-Type", "").split("/")[1]
     if not is_image_link(response=response):

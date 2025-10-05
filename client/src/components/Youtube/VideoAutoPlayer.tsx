@@ -1,20 +1,94 @@
-import { ActionIcon, Avatar, Flex, Group, Slider, Space, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Avatar,
+  Box,
+  Card,
+  Center,
+  CloseButton,
+  Divider,
+  Group,
+  Indicator,
+  Overlay,
+  Pagination,
+  Slider,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { skipToken } from "@reduxjs/toolkit/query/react";
-import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 import { CgPlayTrackNext, CgPlayTrackPrev } from "react-icons/cg";
-import { FaAngleDown, FaAngleUp, FaPause, FaPlay } from "react-icons/fa";
+import { FaAngleUp, FaPause, FaPlay } from "react-icons/fa";
 
-import { useDisclosure } from "@mantine/hooks";
+import { useClickOutside, useDisclosure } from "@mantine/hooks";
 import ReactPlayer from "react-player";
 import { Link } from "react-router-dom";
 import { useYoutubeVideosQuery } from "../../api/youtube";
 import { VideoLikeButton, VideoQueueButton } from "./VideoButtons";
 import VideoPlayer from "./VideoPlayer";
 import { GetYoutubeVideosApiYoutubeVideosListGetApiArg as YoutubeVideosParams } from "../../api/generated/youtubeApi";
+import { createPortal } from "react-dom";
+import { useFooter } from "../../providers/FooterProvider";
+import { useOverlay } from "../../providers/OverlayProvider";
 
 interface VideoAutoPlayerProps {
   initialParams: YoutubeVideosParams;
 }
+
+interface VideoAutoPlayerQueueProps {
+  initialParams: YoutubeVideosParams;
+  currentVideoId?: string;
+  onClick: (params: YoutubeVideosParams, videoIndex: number) => void;
+}
+
+const VideoAutoPlayerQueue: FunctionComponent<VideoAutoPlayerQueueProps> = ({
+  initialParams,
+  onClick,
+  currentVideoId,
+}) => {
+  const [currentParams, setCurrentParams] = useState<YoutubeVideosParams>(initialParams);
+
+  const videosStatus = useYoutubeVideosQuery(currentParams);
+
+  const totalPages = useMemo(() => videosStatus.data?.totalPages ?? 1, [videosStatus.data]);
+  const videos = useMemo(() => videosStatus.data?.videos ?? [], [videosStatus.data]);
+
+  return (
+    <Stack h="100%">
+      <Title order={4}>Queue</Title>
+      <Divider />
+      <Box style={{ overflowX: "hidden", overflowY: "auto" }}>
+        {videos.map((video, i) => {
+          return (
+            <Fragment key={video.id}>
+              <Box className="hover-brighten" style={{ cursor: "pointer" }} onClick={() => onClick(currentParams, i)}>
+                <Group gap="sm" p="xs" wrap="nowrap">
+                  <Indicator processing size={16} disabled={video.id !== currentVideoId}>
+                    <Avatar size="md" src={video.thumbnail} style={{ borderRadius: 10 }} />
+                  </Indicator>
+                  <Stack gap={0} style={{ overflowX: "hidden" }}>
+                    <Text truncate="end">{video.title}</Text>
+                    <Text c="dimmed" truncate="end">
+                      {video.channel.title}
+                    </Text>
+                  </Stack>
+                </Group>
+              </Box>
+              <Divider />
+            </Fragment>
+          );
+        })}
+      </Box>
+      <Center>
+        <Pagination
+          total={totalPages}
+          value={currentParams?.page}
+          onChange={(newPage) => setCurrentParams({ ...currentParams, page: newPage })}
+        />
+      </Center>
+    </Stack>
+  );
+};
 
 const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParams }) => {
   const [currentParams, setCurrentParams] = useState<YoutubeVideosParams | undefined>();
@@ -23,11 +97,15 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
     duration: 0,
     played: 0,
   });
+  const [playing, setPlaying] = useState(true);
+  const hiddenPlayerRef = useRef<ReactPlayer | null>(null);
 
-  const playerRef = useRef<ReactPlayer>(null);
-
-  const [playing, { toggle: togglePlaying }] = useDisclosure(true);
   const [expand, { toggle: toggleExpand }] = useDisclosure(false);
+  const { footerRef } = useFooter();
+  const { overlayRef } = useOverlay();
+  const clickOutsideRef = useClickOutside(() => {
+    if (expand) toggleExpand();
+  });
 
   const videosStatus = useYoutubeVideosQuery(currentParams ?? skipToken, { skip: !currentParams });
 
@@ -67,52 +145,96 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
     }
   }, [currentParams, currentVideoIndex]);
 
-  return (
-    <Flex
-      pos="sticky"
-      bottom="0px"
-      align="center"
-      mb="-16px"
-      mr="-16px"
-      ml="-16px"
-      mt="auto"
-      bg="dark.7"
-      style={{ zIndex: 99 }}
-    >
-      <Stack align="center" w="100%" gap={0}>
-        <Slider
-          display={!expand ? "block" : "none"}
-          w="80%"
-          py="lg"
-          marks={[
-            { value: 0, label: "0:00" },
-            { value: 100, label: convertToTimeString(videoProgress.duration) },
-          ]}
-          label={convertToTimeString(videoProgress.played)}
-          value={Math.floor((videoProgress.played / videoProgress.duration) * 100)}
-          onChange={(value) => {
-            console.log(value);
-            if (playerRef.current) {
-              playerRef.current.seekTo(value / 100, "fraction");
-            }
-          }}
-        />
-        <VideoPlayer
-          ref={playerRef}
-          video={currentVideo}
-          playing={playing}
-          height={expand ? `75vh` : "0px"}
-          onDuration={(duration) => {
-            setVideoProgress({ ...videoProgress, duration });
-          }}
-          onProgress={(state) => {
-            setVideoProgress({ ...videoProgress, played: state.playedSeconds });
-          }}
-          onEnd={() => setCurrentVideoIndex(currentVideoIndex + 1)}
-        />
-        <Group p="sm" align="center">
+  if (!footerRef.current || !overlayRef.current) {
+    return null;
+  }
+
+  const VideoPlayerOverlayPortal = createPortal(
+    <Overlay component={Box} display={expand ? "block" : "none"} style={{ overflow: "hidden" }} fixed>
+      <Card
+        ref={clickOutsideRef}
+        pos="absolute"
+        top="5vh"
+        right="10vw"
+        w="80vw"
+        padding="md"
+        withBorder
+        radius="md"
+        shadow="md"
+        display="flex"
+        style={{ overflow: "auto" }}
+      >
+        <Card.Section inheritPadding py="xs">
+          <Group justify="space-between" wrap="nowrap">
+            <Group wrap="nowrap" style={{ overflowX: "hidden" }}>
+              <Avatar size="md" src={currentVideo?.channel.thumbnail} style={{ borderRadius: 10 }} />
+              <Text truncate="end">{currentVideo?.title}</Text>
+            </Group>
+            <CloseButton onClick={toggleExpand} />
+          </Group>
+        </Card.Section>
+        <Card.Section h={{ base: "30vh", sm: "40vh" }}>
+          <VideoPlayer
+            ref={hiddenPlayerRef}
+            video={currentVideo}
+            playing={playing}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onReady={() => {
+              if (videoProgress.played) {
+                hiddenPlayerRef.current?.seekTo(videoProgress.played, "seconds");
+              }
+            }}
+            onDuration={(duration) => {
+              setVideoProgress({ ...videoProgress, duration });
+            }}
+            onProgress={(state) => {
+              setVideoProgress({ ...videoProgress, played: state.playedSeconds });
+            }}
+            onEnd={() => setCurrentVideoIndex(currentVideoIndex + 1)}
+          />
+        </Card.Section>
+        <Card.Section inheritPadding py="xs" h={{ base: "50vh", sm: "40vh" }}>
+          {currentParams && (
+            <VideoAutoPlayerQueue
+              initialParams={currentParams}
+              onClick={(newParams, newVideoIndex) => {
+                setCurrentParams(newParams);
+                setCurrentVideoIndex(newVideoIndex);
+                setVideoProgress({ duration: 0, played: 0 });
+              }}
+              currentVideoId={currentVideo?.id}
+            />
+          )}
+        </Card.Section>
+      </Card>
+    </Overlay>,
+    overlayRef.current
+  );
+
+  return createPortal(
+    <Stack align="center" w="100%" gap={7} pos="relative">
+      <Slider
+        w={{ base: "90%", md: "95%" }}
+        py="lg"
+        marks={[
+          { value: 0, label: "0:00" },
+          { value: 100, label: convertToTimeString(videoProgress.duration) },
+        ]}
+        label={convertToTimeString(videoProgress.played)}
+        labelAlwaysOn={true}
+        value={Math.floor((videoProgress.played / videoProgress.duration) * 100)}
+        onChange={(value) => {
+          if (hiddenPlayerRef.current) {
+            hiddenPlayerRef.current.seekTo(value / 100, "fraction");
+          }
+        }}
+      />
+      {VideoPlayerOverlayPortal}
+      <Group w={{ base: "90%", md: "95%" }} gap="xl" justify="center" wrap="nowrap" style={{ overflowX: "hidden" }}>
+        <Group wrap="nowrap" style={{ overflowX: "hidden" }}>
           <Avatar size="md" src={currentVideo?.thumbnail} style={{ borderRadius: 10 }} />
-          <Stack gap={0}>
+          <Stack gap={0} style={{ overflowX: "hidden" }}>
             <Text
               component={Link}
               className="hover-underline"
@@ -130,68 +252,42 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
               style={{
                 fontSize: "0.75em",
               }}
+              truncate="end"
               to={channelLink}
             >
               {currentVideo?.channel.title}
             </Text>
           </Stack>
-          <Space w="lg" />
-          <Group wrap="nowrap">
-            {currentVideo && <VideoLikeButton video={currentVideo} />}
-            {currentVideo && <VideoQueueButton video={currentVideo} />}
-          </Group>
-          <Space w="lg" />
-          <Group wrap="nowrap">
-            <ActionIcon
-              className="hover-darken"
-              variant="transparent"
-              onClick={() => setCurrentVideoIndex(currentVideoIndex - 1)}
-            >
-              <CgPlayTrackPrev size={25} />
-            </ActionIcon>
-            <ActionIcon
-              className="hover-darken"
-              variant="transparent"
-              style={{ ...(playing && { display: "none" }) }}
-              onClick={togglePlaying}
-            >
-              <FaPlay />
-            </ActionIcon>
-            <ActionIcon
-              className="hover-darken"
-              variant="transparent"
-              style={{ ...(!playing && { display: "none" }) }}
-              onClick={togglePlaying}
-            >
-              <FaPause />
-            </ActionIcon>
-            <ActionIcon
-              className="hover-darken"
-              variant="transparent"
-              onClick={() => setCurrentVideoIndex(currentVideoIndex + 1)}
-            >
-              <CgPlayTrackNext size={25} />
-            </ActionIcon>
-          </Group>
+        </Group>
+        <Group wrap="nowrap" visibleFrom="sm">
+          {currentVideo && <VideoLikeButton video={currentVideo} />}
+          {currentVideo && <VideoQueueButton video={currentVideo} />}
+        </Group>
+        <Group wrap="nowrap">
           <ActionIcon
             className="hover-darken"
             variant="transparent"
-            style={{ ...(expand && { display: "none" }) }}
-            onClick={toggleExpand}
+            onClick={() => setCurrentVideoIndex(currentVideoIndex - 1)}
           >
+            <CgPlayTrackPrev size={25} />
+          </ActionIcon>
+          <ActionIcon className="hover-darken" variant="transparent" onClick={() => setPlaying(!playing)}>
+            {playing ? <FaPause /> : <FaPlay />}
+          </ActionIcon>
+          <ActionIcon
+            className="hover-darken"
+            variant="transparent"
+            onClick={() => setCurrentVideoIndex(currentVideoIndex + 1)}
+          >
+            <CgPlayTrackNext size={25} />
+          </ActionIcon>
+          <ActionIcon className="hover-darken" variant="transparent" onClick={toggleExpand}>
             <FaAngleUp />
           </ActionIcon>
-          <ActionIcon
-            className="hover-darken"
-            variant="transparent"
-            style={{ ...(!expand && { display: "none" }) }}
-            onClick={toggleExpand}
-          >
-            <FaAngleDown />
-          </ActionIcon>
         </Group>
-      </Stack>
-    </Flex>
+      </Group>
+    </Stack>,
+    footerRef.current
   );
 };
 
