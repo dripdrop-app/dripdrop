@@ -2,11 +2,13 @@ import {
   ActionIcon,
   Avatar,
   Box,
+  Card,
   Center,
+  CloseButton,
   Divider,
   Group,
   Indicator,
-  Modal,
+  Overlay,
   Pagination,
   Slider,
   Stack,
@@ -18,7 +20,7 @@ import { Fragment, FunctionComponent, useEffect, useMemo, useRef, useState } fro
 import { CgPlayTrackNext, CgPlayTrackPrev } from "react-icons/cg";
 import { FaAngleUp, FaPause, FaPlay } from "react-icons/fa";
 
-import { useDisclosure } from "@mantine/hooks";
+import { useClickOutside, useDisclosure } from "@mantine/hooks";
 import ReactPlayer from "react-player";
 import { Link } from "react-router-dom";
 import { useYoutubeVideosQuery } from "../../api/youtube";
@@ -27,6 +29,7 @@ import VideoPlayer from "./VideoPlayer";
 import { GetYoutubeVideosApiYoutubeVideosListGetApiArg as YoutubeVideosParams } from "../../api/generated/youtubeApi";
 import { createPortal } from "react-dom";
 import { useFooter } from "../../providers/FooterProvider";
+import { useOverlay } from "../../providers/OverlayProvider";
 
 interface VideoAutoPlayerProps {
   initialParams: YoutubeVideosParams;
@@ -53,6 +56,7 @@ const VideoAutoPlayerQueue: FunctionComponent<VideoAutoPlayerQueueProps> = ({
   return (
     <Stack h="100%">
       <Title order={4}>Queue</Title>
+      <Divider />
       <Box style={{ overflowX: "hidden", overflowY: "auto" }}>
         {videos.map((video, i) => {
           return (
@@ -95,10 +99,13 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
   });
   const [playing, setPlaying] = useState(true);
   const hiddenPlayerRef = useRef<ReactPlayer | null>(null);
-  const modalPlayerRef = useRef<ReactPlayer | null>(null);
 
   const [expand, { toggle: toggleExpand }] = useDisclosure(false);
   const { footerRef } = useFooter();
+  const { overlayRef } = useOverlay();
+  const clickOutsideRef = useClickOutside(() => {
+    if (expand) toggleExpand();
+  });
 
   const videosStatus = useYoutubeVideosQuery(currentParams ?? skipToken, { skip: !currentParams });
 
@@ -138,12 +145,73 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
     }
   }, [currentParams, currentVideoIndex]);
 
-  if (!footerRef.current) {
+  if (!footerRef.current || !overlayRef.current) {
     return null;
   }
 
+  const VideoPlayerOverlayPortal = createPortal(
+    <Overlay component={Box} display={expand ? "block" : "none"} style={{ overflow: "hidden" }} fixed>
+      <Card
+        ref={clickOutsideRef}
+        pos="absolute"
+        top="5vh"
+        right="10vw"
+        w="80vw"
+        padding="md"
+        withBorder
+        radius="md"
+        shadow="md"
+        display="flex"
+        style={{ overflow: "auto" }}
+      >
+        <Card.Section inheritPadding py="xs">
+          <Group justify="space-between" wrap="nowrap">
+            <Group wrap="nowrap" style={{ overflowX: "hidden" }}>
+              <Avatar size="md" src={currentVideo?.channel.thumbnail} style={{ borderRadius: 10 }} />
+              <Text truncate="end">{currentVideo?.title}</Text>
+            </Group>
+            <CloseButton onClick={toggleExpand} />
+          </Group>
+        </Card.Section>
+        <Card.Section h={{ base: "30vh", sm: "40vh" }}>
+          <VideoPlayer
+            ref={hiddenPlayerRef}
+            video={currentVideo}
+            playing={playing}
+            onReady={() => {
+              if (videoProgress.played) {
+                hiddenPlayerRef.current?.seekTo(videoProgress.played, "seconds");
+              }
+            }}
+            onDuration={(duration) => {
+              setVideoProgress({ ...videoProgress, duration });
+            }}
+            onProgress={(state) => {
+              setVideoProgress({ ...videoProgress, played: state.playedSeconds });
+            }}
+            onEnd={() => setCurrentVideoIndex(currentVideoIndex + 1)}
+          />
+        </Card.Section>
+        <Card.Section inheritPadding py="xs" h={{ base: "50vh", sm: "40vh" }}>
+          {currentParams && (
+            <VideoAutoPlayerQueue
+              initialParams={currentParams}
+              onClick={(newParams, newVideoIndex) => {
+                setCurrentParams(newParams);
+                setCurrentVideoIndex(newVideoIndex);
+                setVideoProgress({ duration: 0, played: 0 });
+              }}
+              currentVideoId={currentVideo?.id}
+            />
+          )}
+        </Card.Section>
+      </Card>
+    </Overlay>,
+    overlayRef.current
+  );
+
   return createPortal(
-    <Stack align="center" w="100%" gap={7}>
+    <Stack align="center" w="100%" gap={7} pos="relative">
       <Slider
         w={{ base: "90%", md: "95%" }}
         py="lg"
@@ -160,69 +228,7 @@ const VideoAutoPlayer: FunctionComponent<VideoAutoPlayerProps> = ({ initialParam
           }
         }}
       />
-      {!expand && (
-        <VideoPlayer
-          style={{ display: "none" }}
-          ref={hiddenPlayerRef}
-          video={currentVideo}
-          playing={playing}
-          onReady={() => {
-            if (videoProgress.played) {
-              hiddenPlayerRef.current?.seekTo(videoProgress.played, "seconds");
-            }
-          }}
-          onDuration={(duration) => {
-            setVideoProgress({ ...videoProgress, duration });
-          }}
-          onProgress={(state) => {
-            setVideoProgress({ ...videoProgress, played: state.playedSeconds });
-          }}
-          onEnd={() => setCurrentVideoIndex(currentVideoIndex + 1)}
-        />
-      )}
-      <Modal opened={expand} onClose={toggleExpand} size="lg" title={currentVideo?.title}>
-        <Stack>
-          <VideoPlayer
-            ref={modalPlayerRef}
-            video={currentVideo}
-            playing={playing}
-            height="47vh"
-            onPause={() => {
-              setPlaying(false);
-            }}
-            onPlay={() => {
-              setPlaying(true);
-            }}
-            onReady={() => {
-              if (videoProgress.played) {
-                modalPlayerRef.current?.seekTo(videoProgress.played, "seconds");
-              }
-            }}
-            onDuration={(duration) => {
-              setVideoProgress({ ...videoProgress, duration });
-            }}
-            onProgress={(state) => {
-              setVideoProgress({ ...videoProgress, played: state.playedSeconds });
-            }}
-            onEnd={() => setCurrentVideoIndex(currentVideoIndex + 1)}
-          />
-          <Box h="30vh">
-            {currentParams && (
-              <VideoAutoPlayerQueue
-                initialParams={currentParams}
-                onClick={(newParams, newVideoIndex) => {
-                  setCurrentParams(newParams);
-                  setCurrentVideoIndex(newVideoIndex);
-                  setVideoProgress({ duration: 0, played: 0 });
-                  hiddenPlayerRef.current?.seekTo(0, "seconds");
-                  modalPlayerRef.current?.seekTo(0, "seconds");
-                }}
-                currentVideoId={currentVideo?.id}
-              />
-            )}
-          </Box>
-        </Stack>
-      </Modal>
+      {VideoPlayerOverlayPortal}
       <Group w={{ base: "90%", md: "95%" }} gap="xl" justify="center" wrap="nowrap" style={{ overflowX: "hidden" }}>
         <Group wrap="nowrap" style={{ overflowX: "hidden" }}>
           <Avatar size="md" src={currentVideo?.thumbnail} style={{ borderRadius: 10 }} />

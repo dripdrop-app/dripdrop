@@ -13,6 +13,7 @@ import { useCheckSessionQuery } from "./api/auth";
 import { MusicDownloader } from "./pages/Music";
 import { YoutubeChannel, YoutubeSubscriptions, YoutubeVideo, YoutubeVideos } from "./pages/Youtube";
 import { useFooter } from "./providers/FooterProvider";
+import { useOverlay } from "./providers/OverlayProvider";
 
 const AuthenticatedRoute = () => {
   const sessionStatus = useCheckSessionQuery();
@@ -37,6 +38,7 @@ const App = () => {
   const sessionStatus = useCheckSessionQuery();
   const location = useLocation();
   const { displayFooter, footerRef } = useFooter();
+  const { overlayRef } = useOverlay();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -155,6 +157,7 @@ const App = () => {
               <div ref={footerRef}></div>
             </AppShell.Footer>
           )}
+          <div ref={overlayRef}></div>
         </AppShell>
       </ModalsProvider>
     </MantineProvider>
