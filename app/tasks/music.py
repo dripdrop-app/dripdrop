@@ -4,13 +4,20 @@ from pathlib import Path
 
 import aiofiles
 import aiofiles.os
-import httpx
 from sqlalchemy import select
 from yt_dlp.utils import sanitize_filename
 
 from app.db import MusicJob, WebDav
 from app.models.music import MusicJobUpdateResponse
-from app.services import audiotags, ffmpeg, imagedownloader, s3, tempfiles, ytdlp
+from app.services import (
+    audiotags,
+    ffmpeg,
+    httpclient,
+    imagedownloader,
+    s3,
+    tempfiles,
+    ytdlp,
+)
 from app.services.pubsub import PubSub
 from app.settings import settings
 from app.tasks.app import QueueTask, celery
@@ -25,7 +32,7 @@ async def retrieve_audio_file(music_job: MusicJob):
 
     filename = None
     if music_job.filename_url:
-        async with httpx.AsyncClient() as client:
+        async with httpclient.AsyncClient() as client:
             response = await client.get(music_job.filename_url)
             audio_file_path = job_file_path.joinpath(
                 f"temp{Path(music_job.original_filename).suffix}"
@@ -138,7 +145,7 @@ async def run_music_job(self: QueueTask, music_job_id: str):
                 content_type="audio/mpeg",
             )
             if webdav:
-                async with httpx.AsyncClient() as client:
+                async with httpclient.AsyncClient() as client:
                     response = await client.put(
                         f"{webdav.url}/{new_filename}",
                         content=file_content,

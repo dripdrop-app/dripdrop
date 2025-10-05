@@ -2,10 +2,10 @@ import logging
 import traceback
 from urllib.parse import urljoin
 
-import httpx
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
+from app.services import httpclient
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ async def get_channel_subscriptions(channel_id: str):
         "channelId": channel_id,
         "key": settings.google_api_key,
     }
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         while True:
             response = await client.get(
                 urljoin(YOUTUBE_API, "/youtube/v3/subscriptions"), params=params
@@ -63,7 +63,7 @@ async def get_channel_info(channel_id: str):
         url += channel_id
     else:
         url += f"channel/{channel_id}"
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         response = await client.get(url=url)
         if response.is_error:
             return None
@@ -91,7 +91,7 @@ async def _get_channel_upload_playlist_id(channel_id: str):
         "id": channel_id,
         "key": settings.google_api_key,
     }
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         response = await client.get(
             urljoin(YOUTUBE_API, "/youtube/v3/channels"), params=params
         )
@@ -111,7 +111,7 @@ async def _get_channel_upload_playlist_videos(channel_id: str):
         "maxResults": 50,
         "key": settings.google_api_key,
     }
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         while True:
             response = await client.get(
                 urljoin(YOUTUBE_API, "/youtube/v3/playlistItems"), params=params
@@ -145,7 +145,7 @@ async def get_channel_latest_videos(channel_id: str):
             "id": ",".join(video_ids),
             "key": settings.google_api_key,
         }
-        async with httpx.AsyncClient() as client:
+        async with httpclient.AsyncClient() as client:
             response = await client.get(
                 urljoin(YOUTUBE_API, "/youtube/v3/videos"), params=params
             )
@@ -188,7 +188,7 @@ async def get_video_category(category_id: str):
         "id": category_id,
         "key": settings.google_api_key,
     }
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         response = await client.get(
             urljoin(YOUTUBE_API, "/youtube/v3/videoCategories"), params=params
         )
@@ -208,7 +208,7 @@ async def get_video_categories():
         "regionCode": "US",
         "key": settings.google_api_key,
     }
-    async with httpx.AsyncClient() as client:
+    async with httpclient.AsyncClient() as client:
         while True:
             response = await client.get(
                 urljoin(YOUTUBE_API, "/youtube/v3/videoCategories"), params=params
@@ -233,9 +233,7 @@ async def get_video_categories():
 
 async def get_video_uploader(video_id: str):
     url = "https://www.youtube.com/watch?v=" + video_id
-    async with httpx.AsyncClient(
-        transport=httpx.AsyncHTTPTransport(retries=3)
-    ) as client:
+    async with httpclient.AsyncClient() as client:
         response = await client.get(url=url)
         if response.is_error:
             return None
