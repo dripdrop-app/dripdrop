@@ -34,7 +34,7 @@ async def test_update_webdav_with_invalid_webdav(
 ):
     """
     Test updating webdav with an invalid URL. The
-    endpoint should return a 422 status.
+    endpoint should return a 400 status.
     """
     await create_and_login_user()
     new_data = {

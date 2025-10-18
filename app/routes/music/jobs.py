@@ -45,18 +45,18 @@ async def create_job(
     if form.file and form.video_url:
         raise HTTPException(
             detail="'file' and 'video_url' cannot both be defined.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
     elif form.file is None and form.video_url is None:
         raise HTTPException(
             detail="'file' or 'video_url' must be defined.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
     if form.file:
         if not re.match("^audio/", form.file.content_type):
             raise HTTPException(
                 detail="File is incorrect format.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             )
     music_job = MusicJob(
         user_email=user.email,

@@ -26,7 +26,7 @@ async def test_grouping_with_invalid_video_url(client, faker, create_and_login_u
 
     await create_and_login_user()
     response = await client.get(URL, params={"video_url": faker.url([])})
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 async def test_grouping_with_failed_to_retrieve(

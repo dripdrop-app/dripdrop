@@ -24,7 +24,7 @@ async def test_artwork_with_invalid_url(client, faker, create_and_login_user):
 
     await create_and_login_user()
     response = await client.get(URL, params={"artwork_url": faker.url([])})
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 async def test_artwork_with_valid_image_url_but_failed_retrieval(
