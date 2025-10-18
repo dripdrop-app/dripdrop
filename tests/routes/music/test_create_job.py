@@ -39,7 +39,7 @@ async def test_create_job_with_file_and_video_url(
             "file": ("dripdrop.mp3", test_audio, "audio/mpeg"),
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json() == {
         "detail": "'file' and 'video_url' cannot both be defined."
     }
@@ -61,7 +61,7 @@ async def test_create_job_without_file_and_video_url(client, create_and_login_us
             "grouping": "grouping",
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json() == {"detail": "'file' or 'video_url' must be defined."}
 
 
@@ -82,7 +82,7 @@ async def test_create_job_with_invalid_content_type_file(client, create_and_logi
         },
         files={"file": b""},
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json() == {"detail": "File is incorrect format."}
 
 
