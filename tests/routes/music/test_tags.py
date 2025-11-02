@@ -1,7 +1,6 @@
-import httpx
 from fastapi import status
 
-from app.services import audiotags, s3
+from app.services import audiotags, httpclient, s3
 
 URL = "/api/music/tags"
 
@@ -22,7 +21,7 @@ async def test_tags_with_an_invalid_file(client, create_and_login_user):
     """
 
     await create_and_login_user()
-    async with httpx.AsyncClient() as http_client:
+    async with httpclient.AsyncClient() as http_client:
         response = await http_client.get(s3.resolve_url("assets/dripdrop.png"))
         assert response.status_code == status.HTTP_200_OK
         file = response.content
@@ -44,7 +43,7 @@ async def test_tags_with_a_mp3_without_tags(client, create_and_login_user):
     """
 
     await create_and_login_user()
-    async with httpx.AsyncClient() as http_client:
+    async with httpclient.AsyncClient() as http_client:
         response = await http_client.get(s3.resolve_url("/assets/sample4.mp3"))
         assert response.status_code == status.HTTP_200_OK
         file = response.content
@@ -66,7 +65,7 @@ async def test_tags_with_a_valid_mp3_file(client, create_and_login_user):
     """
 
     await create_and_login_user()
-    async with httpx.AsyncClient() as http_client:
+    async with httpclient.AsyncClient() as http_client:
         response = await http_client.get(
             s3.resolve_url("assets/Criminal%20Sinny%20&%20Fako.mp3")
         )
