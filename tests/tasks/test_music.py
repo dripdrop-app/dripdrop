@@ -1,6 +1,5 @@
 import json
 
-import httpx
 import pytest
 import yt_dlp.utils
 from fastapi import UploadFile
@@ -8,6 +7,7 @@ from sqlalchemy.exc import NoResultFound
 
 from app.db import MusicJob, User, WebDav
 from app.services import audiotags
+from app.services.httpclient import AsyncClient
 from app.services.pubsub import PubSub
 from app.settings import settings
 from app.tasks.music import run_music_job
@@ -109,7 +109,7 @@ async def test_run_music_job_with_audio_url(
     assert music_job.download_url is not None
     assert music_job.download_filename is not None
 
-    async with httpx.AsyncClient() as client:
+    async with AsyncClient() as client:
         response = await client.get(music_job.download_url)
         assert response.status_code == 200
         assert response.headers.get("Content-Type") == "audio/mpeg"
@@ -158,7 +158,7 @@ async def test_run_music_job_with_file(
     assert music_job.filename_url is not None
     assert music_job.original_filename is not None
 
-    async with httpx.AsyncClient() as client:
+    async with AsyncClient() as client:
         response = await client.get(music_job.download_url)
         assert response.status_code == 200
         assert response.headers.get("Content-Type") == "audio/mpeg"
@@ -209,7 +209,7 @@ async def test_run_music_job_with_external_artwork(
     assert music_job.artwork_url is not None
     assert music_job.artwork_filename is None
 
-    async with httpx.AsyncClient() as client:
+    async with AsyncClient() as client:
         response = await client.get(music_job.download_url)
         assert response.status_code == 200
         assert response.headers.get("Content-Type") == "audio/mpeg"
@@ -266,7 +266,7 @@ async def test_run_music_job_with_webdav_upload(
     assert music_job.download_url is not None
     assert music_job.download_filename is not None
 
-    async with httpx.AsyncClient() as client:
+    async with AsyncClient() as client:
         new_filename = music_job.download_filename.split("/")[-1]
         response = await client.request(
             "PROPFIND",

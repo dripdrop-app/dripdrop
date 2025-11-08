@@ -4,13 +4,12 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
-import httpx
 from sqlalchemy import TIMESTAMP, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, get_session
 from app.db.models.user import User
-from app.services import audiotags, imagedownloader, s3
+from app.services import audiotags, httpclient, imagedownloader, s3
 from app.settings import settings
 
 
@@ -104,7 +103,7 @@ class MusicJob(Base):
             self.artwork_url = url
             self.artwork_filename = filename
         else:
-            async with httpx.AsyncClient() as client:
+            async with httpclient.AsyncClient() as client:
                 response = await client.get(artwork_url)
                 if response.is_success and imagedownloader.is_image_link(response):
                     self.artwork_url = artwork_url
