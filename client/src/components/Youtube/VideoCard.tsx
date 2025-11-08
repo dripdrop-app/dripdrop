@@ -4,14 +4,15 @@ import { FunctionComponent } from "react";
 import { Link } from "react-router-dom";
 
 import { YoutubeVideoResponse as YoutubeVideo } from "../../api/generated/youtubeApi";
-import { VideoQueueButton, VideoWatchButton } from "./VideoButtons";
+import { VideoPlayInBackgroundButton, VideoQueueButton, VideoWatchButton } from "./VideoButtons";
 import VideoCategoryIcon from "./VideoCategoryIcon";
 
 interface VideoCardProps {
   video: YoutubeVideo;
+  onPlayVideoInBackground?: () => void;
 }
 
-const VideoCard: FunctionComponent<VideoCardProps> = ({ video }) => {
+const VideoCard: FunctionComponent<VideoCardProps> = ({ video, onPlayVideoInBackground }) => {
   const { hovered, ref } = useHover();
   const os = useOs();
 
@@ -38,7 +39,7 @@ const VideoCard: FunctionComponent<VideoCardProps> = ({ video }) => {
             component={Link}
             to={videoLink}
           />
-          <Box
+          <Flex
             pos="absolute"
             right="5%"
             top="5%"
@@ -48,12 +49,12 @@ const VideoCard: FunctionComponent<VideoCardProps> = ({ video }) => {
             }}
           >
             <VideoQueueButton video={video} />
-          </Box>
-          <Box pos="absolute" left="5%" top="5%" style={{ zIndex: 2 }}>
+          </Flex>
+          <Flex pos="absolute" left="5%" top="5%" style={{ zIndex: 2 }}>
             <VideoWatchButton video={video} />
-          </Box>
+          </Flex>
           <Tooltip label={video.category.name}>
-            <Box
+            <Flex
               style={(theme) => ({
                 zIndex: 2,
                 borderRadius: theme.spacing.xs,
@@ -62,12 +63,16 @@ const VideoCard: FunctionComponent<VideoCardProps> = ({ video }) => {
               right="5%"
               bottom="5%"
               bg="dark.7"
-              px={6}
-              py={2}
+              p="xs"
             >
               <VideoCategoryIcon categoryId={video.category.id} color="white" />
-            </Box>
+            </Flex>
           </Tooltip>
+          {onPlayVideoInBackground && (
+            <Flex pos="absolute" left="45%" top="45%" style={{ zIndex: 2 }}>
+              <VideoPlayInBackgroundButton onPlayVideoInBackground={onPlayVideoInBackground} />
+            </Flex>
+          )}
         </Card.Section>
         <Stack py={10}>
           <Stack className="hover-underline">

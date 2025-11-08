@@ -1,5 +1,5 @@
 import { AspectRatio, Center, Divider, Grid, Loader, Stack, Title } from "@mantine/core";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
 
@@ -7,11 +7,12 @@ import { useYoutubeVideoQuery } from "../../api/youtube";
 import VideoCard from "../../components/Youtube/VideoCard";
 import VideoInformation from "../../components/Youtube/VideoInformation";
 import VideoPlayer from "../../components/Youtube/VideoPlayer";
+import { useBackgroundPlayer } from "../../providers/BackgroundPlayerProvider";
 
 const YoutubeVideo = () => {
   const { id } = useParams();
-
   const videoStatus = useYoutubeVideoQuery({ videoId: id || "", relatedVideosLength: 4 }, { skip: !id });
+  const { playerRef } = useBackgroundPlayer();
 
   const { relatedVideos, video } = useMemo(
     () =>
@@ -20,6 +21,8 @@ const YoutubeVideo = () => {
         : { video: null, relatedVideos: null },
     [videoStatus.data]
   );
+
+  // TODO: Figure out how to test pause i =n sentry
 
   return (
     <Stack p="md">

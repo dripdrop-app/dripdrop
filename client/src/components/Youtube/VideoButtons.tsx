@@ -1,6 +1,6 @@
 import { ActionIcon, Tooltip } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { MdAddToQueue, MdRemoveFromQueue, MdThumbUp, MdVisibility } from "react-icons/md";
+import { MdAddToQueue, MdPlayArrow, MdRemoveFromQueue, MdThumbUp, MdVisibility } from "react-icons/md";
 
 import { YoutubeVideoResponse as YoutubeVideo } from "../../api/generated/youtubeApi";
 import {
@@ -40,9 +40,7 @@ export const VideoLikeButton: FunctionComponent<VideoButtonsProps> = ({ video })
   );
 };
 
-export const VideoQueueButton = (props: VideoButtonsProps) => {
-  const { video } = props;
-
+export const VideoQueueButton: FunctionComponent<VideoButtonsProps> = ({ video }) => {
   const [queueVideo, queueVideoStatus] = useAddYoutubeVideoQueueMutation();
   const [unQueueVideo, unQueueVideoStatus] = useDeleteYoutubeVideoQueueMutation();
 
@@ -66,9 +64,7 @@ export const VideoQueueButton = (props: VideoButtonsProps) => {
   );
 };
 
-export const VideoWatchButton = (props: VideoButtonsProps) => {
-  const { video } = props;
-
+export const VideoWatchButton: FunctionComponent<VideoButtonsProps> = ({ video }) => {
   const watchedDate = video.watched ? new Date(video.watched).toLocaleDateString() : "";
 
   if (!video.watched) {
@@ -79,6 +75,27 @@ export const VideoWatchButton = (props: VideoButtonsProps) => {
     <Tooltip label={`Watched on ${watchedDate}`}>
       <ActionIcon className="hover-brighten" variant="transparent" color="white">
         <MdVisibility size={25} />
+      </ActionIcon>
+    </Tooltip>
+  );
+};
+
+interface VideoPlayInBackgroundButtonProps {
+  onPlayVideoInBackground: () => void;
+}
+
+export const VideoPlayInBackgroundButton: FunctionComponent<VideoPlayInBackgroundButtonProps> = ({
+  onPlayVideoInBackground,
+}) => {
+  return (
+    <Tooltip label={`Play in Background`}>
+      <ActionIcon
+        className="hover-brighten"
+        variant="transparent"
+        color="white"
+        onClick={() => onPlayVideoInBackground()}
+      >
+        <MdPlayArrow size={60} />
       </ActionIcon>
     </Tooltip>
   );
