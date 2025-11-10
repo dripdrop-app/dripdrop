@@ -28,7 +28,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
       - name: Retrieve infiscal secrets
-        uses: infisical/secrets-action@v1.0.12
+        uses: infisical/secrets-action@v1.0.15
         with:
           method: "universal"
           client-id: ${{ secrets.INFISCAL_CLIENT_ID }}
