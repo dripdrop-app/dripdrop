@@ -13,6 +13,7 @@ import "@mantine/dropzone/styles.css";
 import "./main.css";
 import { FooterProvider } from "./providers/FooterProvider";
 import { OverlayProvider } from "./providers/OverlayProvider";
+import { BackgroundPlayerProvider } from "./providers/BackgroundPlayerProvider";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
@@ -22,7 +23,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           <Helmet titleTemplate="%s | dripdrop" defaultTitle="dripdrop" />
           <OverlayProvider>
             <FooterProvider>
-              <App />
+              <BackgroundPlayerProvider>
+                <App />
+              </BackgroundPlayerProvider>
             </FooterProvider>
           </OverlayProvider>
         </HelmetProvider>

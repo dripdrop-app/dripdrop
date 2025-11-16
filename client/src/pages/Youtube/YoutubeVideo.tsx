@@ -7,11 +7,12 @@ import { useYoutubeVideoQuery } from "../../api/youtube";
 import VideoCard from "../../components/Youtube/VideoCard";
 import VideoInformation from "../../components/Youtube/VideoInformation";
 import VideoPlayer from "../../components/Youtube/VideoPlayer";
+import { useBackgroundPlayer } from "../../providers/BackgroundPlayerProvider";
 
 const YoutubeVideo = () => {
   const { id } = useParams();
-
   const videoStatus = useYoutubeVideoQuery({ videoId: id || "", relatedVideosLength: 4 }, { skip: !id });
+  const { setPlaying } = useBackgroundPlayer();
 
   const { relatedVideos, video } = useMemo(
     () =>
@@ -33,7 +34,7 @@ const YoutubeVideo = () => {
             <title>{video.title}</title>
           </Helmet>
           <AspectRatio ratio={18 / 8}>
-            <VideoPlayer video={video} playing={true} />
+            <VideoPlayer video={video} playing={true} onPlay={() => setPlaying(false)} />
           </AspectRatio>
           <VideoInformation video={video} />
           <Divider />

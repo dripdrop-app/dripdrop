@@ -1,18 +1,16 @@
 import { Center, Checkbox, Grid, Group, Loader, MultiSelect, Pagination, Stack } from "@mantine/core";
-import { FunctionComponent, useEffect, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 
 import { useYoutubeVideoCategoriesQuery, useYoutubeVideosQuery } from "../../api/youtube";
 import useSearchParams from "../../utils/useSearchParams";
-import VideoAutoPlayer from "./VideoAutoPlayer";
 import YoutubeVideoCard from "./VideoCard";
-import { useFooter } from "../../providers/FooterProvider";
+import { useBackgroundPlayer } from "../../providers/BackgroundPlayerProvider";
 
 interface VideosViewProps {
   channelId?: string;
-  enableAutoPlay?: boolean;
 }
 
-const VideosView: FunctionComponent<VideosViewProps> = ({ channelId, enableAutoPlay }) => {
+const VideosView: FunctionComponent<VideosViewProps> = ({ channelId }) => {
   const { params, setSearchParams } = useSearchParams<{
     perPage: number;
     page: number;
@@ -28,23 +26,17 @@ const VideosView: FunctionComponent<VideosViewProps> = ({ channelId, enableAutoP
   });
   const videosStatus = useYoutubeVideosQuery({
     ...params,
-    videoCategories: params.videoCategories.map((id) => parseInt(id)),
+    videoCategories: params.videoCategories.map(parseInt),
     channelId,
   });
   const videoCategoriesStatus = useYoutubeVideoCategoriesQuery();
-  const { setDisplayFooter } = useFooter();
+  const { setShowPlayer, addVideoToQueue } = useBackgroundPlayer();
 
   const categories = useMemo(
     () => (videoCategoriesStatus.data ? videoCategoriesStatus.data.categories : []),
     [videoCategoriesStatus.data]
   );
   const { videos, totalPages } = useMemo(() => videosStatus.data ?? { videos: [], totalPages: 1 }, [videosStatus.data]);
-
-  useEffect(() => {
-    return () => {
-      setDisplayFooter(false);
-    };
-  }, [setDisplayFooter]);
 
   return (
     <Stack h="100%">
@@ -76,9 +68,18 @@ const VideosView: FunctionComponent<VideosViewProps> = ({ channelId, enableAutoP
       </Center>
       <Stack style={{ ...(!videosStatus.data && { display: "none" }) }}>
         <Grid type="container" breakpoints={{ xs: "400px", sm: "800px", md: "1000px", lg: "1200px", xl: "2000px" }}>
-          {videos.map((video) => (
+          {videos.map((video, i) => (
             <Grid.Col key={video.id} span={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2 }}>
-              <YoutubeVideoCard video={video} />
+              <YoutubeVideoCard
+                video={video}
+                onPlayVideoInBackground={() => {
+                  setShowPlayer(true);
+                  addVideoToQueue({
+                    index: i,
+                    params: { ...params, videoCategories: params.videoCategories.map(parseInt) },
+                  });
+                }}
+              />
             </Grid.Col>
           ))}
         </Grid>
@@ -90,15 +91,6 @@ const VideosView: FunctionComponent<VideosViewProps> = ({ channelId, enableAutoP
           />
         </Center>
       </Stack>
-      {enableAutoPlay && (
-        <VideoAutoPlayer
-          initialParams={{
-            ...params,
-            videoCategories: params.videoCategories.map((id) => parseInt(id)),
-            channelId,
-          }}
-        />
-      )}
     </Stack>
   );
 };

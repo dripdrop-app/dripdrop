@@ -14,6 +14,7 @@ import { MusicDownloader } from "./pages/Music";
 import { YoutubeChannel, YoutubeSubscriptions, YoutubeVideo, YoutubeVideos } from "./pages/Youtube";
 import { useFooter } from "./providers/FooterProvider";
 import { useOverlay } from "./providers/OverlayProvider";
+import BackgroundPlayer from "./components/Youtube/BackgroundPlayer";
 
 const AuthenticatedRoute = () => {
   const sessionStatus = useCheckSessionQuery();
@@ -152,7 +153,9 @@ const App = () => {
               <Route path="*" element={<Navigate to="music/downloader" replace />} />
             </Routes>
           </AppShell.Main>
-          <AppShell.Footer display={displayFooter ? "block" : "none"} ref={footerRef}></AppShell.Footer>
+          <AppShell.Footer display={displayFooter ? "block" : "none"} ref={footerRef}>
+            <BackgroundPlayer />
+          </AppShell.Footer>
           <div ref={overlayRef}></div>
         </AppShell>
       </ModalsProvider>
