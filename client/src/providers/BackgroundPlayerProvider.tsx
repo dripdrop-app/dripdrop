@@ -23,7 +23,10 @@ interface BackgroundPlayerContextType {
   canAdvanceQueue: boolean;
   canRecedeQueue: boolean;
   currentVideo?: YoutubeVideo;
+  params?: YoutubeVideosParams;
+  playing: boolean;
   recedeQueue: () => void;
+  setPlaying: (playing: boolean) => void;
   setShowPlayer: (show: boolean) => void;
   showPlayer: boolean;
   playerRef: MutableRefObject<ReactPlayer | null>;
@@ -38,6 +41,7 @@ export const BackgroundPlayerProvider = ({ children }: { children: ReactNode }) 
   const [params, setParams] = useState<YoutubeVideosParams>();
   const [showPlayer, setShowPlayer] = useState(false);
   const playerRef = useRef<ReactPlayer | null>(null);
+  const [playing, setPlaying] = useState(false);
 
   const videosStatus = useYoutubeVideosQuery(params ?? skipToken);
 
@@ -102,8 +106,11 @@ export const BackgroundPlayerProvider = ({ children }: { children: ReactNode }) 
         canAdvanceQueue,
         canRecedeQueue,
         currentVideo,
+        params,
+        playing,
         playerRef,
         recedeQueue,
+        setPlaying,
         setShowPlayer,
         showPlayer,
       }}

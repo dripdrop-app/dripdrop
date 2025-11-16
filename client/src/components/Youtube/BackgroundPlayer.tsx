@@ -1,4 +1,22 @@
-import { ActionIcon, Avatar, Box, Card, CloseButton, Group, Overlay, Slider, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Avatar,
+  Box,
+  Card,
+  Center,
+  CloseButton,
+  Divider,
+  Grid,
+  Group,
+  List,
+  Overlay,
+  Pagination,
+  ScrollArea,
+  Slider,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { useEffect, useState } from "react";
 import { CgPlayTrackNext, CgPlayTrackPrev } from "react-icons/cg";
 import { FaAngleUp, FaPause, FaPlay } from "react-icons/fa";
@@ -12,15 +30,29 @@ import { useFooter } from "../../providers/FooterProvider";
 import { useOverlay } from "../../providers/OverlayProvider";
 import { useBackgroundPlayer } from "../../providers/BackgroundPlayerProvider";
 import { MdClose } from "react-icons/md";
+import { useYoutubeVideosQuery } from "../../api/youtube";
+import { skipToken } from "@reduxjs/toolkit/query";
 
 const BackgroundPlayer = () => {
-  const { currentVideo, advanceQueue, playerRef, recedeQueue, setShowPlayer } = useBackgroundPlayer();
+  const {
+    addVideoToQueue,
+    currentVideo,
+    advanceQueue,
+    params,
+    playing,
+    playerRef,
+    recedeQueue,
+    setPlaying,
+    setShowPlayer,
+  } = useBackgroundPlayer();
+
+  const [queueParams, setQueueParams] = useState(params);
+  const videosStatus = useYoutubeVideosQuery(queueParams ?? skipToken);
 
   const [videoProgress, setVideoProgress] = useState({
     duration: 0,
     played: 0,
   });
-  const [playing, setPlaying] = useState(true);
 
   const [expand, { toggle: toggleExpand }] = useDisclosure(false);
   const { footerRef } = useFooter();
@@ -42,6 +74,10 @@ const BackgroundPlayer = () => {
   useEffect(() => {
     setVideoProgress({ played: 0, duration: 0 });
   }, [currentVideo]);
+
+  useEffect(() => {
+    setQueueParams(params);
+  }, [params]);
 
   if (!footerRef.current || !overlayRef.current) {
     return null;
@@ -71,20 +107,69 @@ const BackgroundPlayer = () => {
           </Group>
         </Card.Section>
         <Card.Section h="80vh">
-          <VideoPlayer
-            ref={playerRef}
-            video={currentVideo}
-            playing={playing}
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onDuration={(duration) => {
-              setVideoProgress({ ...videoProgress, duration });
-            }}
-            onProgress={(state) => {
-              setVideoProgress({ ...videoProgress, played: state.playedSeconds });
-            }}
-            onEnd={() => advanceQueue()}
-          />
+          <Grid p="sm">
+            <Grid.Col h={{ xs: "40vh", md: "80vh" }} span={{ xs: 12, md: 8 }}>
+              <VideoPlayer
+                ref={playerRef}
+                video={currentVideo}
+                playing={playing}
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onDuration={(duration) => {
+                  setVideoProgress({ ...videoProgress, duration });
+                }}
+                onProgress={(state) => {
+                  setVideoProgress({ ...videoProgress, played: state.playedSeconds });
+                }}
+                onEnd={() => advanceQueue()}
+              />
+            </Grid.Col>
+            <Grid.Col h={{ xs: "40vh", md: "80vh" }} span={{ xs: 12, md: 4 }}>
+              <Title p="sm" order={3}>
+                Up Next
+              </Title>
+              <ScrollArea h="90%">
+                <List spacing="md" withPadding styles={{ itemWrapper: { width: "100%" } }}>
+                  {videosStatus.currentData?.videos.map((v, i) => (
+                    <>
+                      {i > 0 && <Divider my="sm" />}
+                      <List.Item
+                        icon={
+                          <Avatar src={v.channel.thumbnail} className={currentVideo?.id === v.id ? "rotate" : ""} />
+                        }
+                        className="hover-brighten"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => {
+                          if (queueParams) {
+                            addVideoToQueue({
+                              index: i,
+                              params: queueParams,
+                            });
+                          }
+                        }}
+                      >
+                        <Text>{v.title}</Text>
+                        <Text c="dimmed">{v.channel.title}</Text>
+                      </List.Item>
+                    </>
+                  ))}
+                </List>
+              </ScrollArea>
+              <Center>
+                <Pagination
+                  p="sm"
+                  size="sm"
+                  total={videosStatus.currentData?.totalPages || 0}
+                  value={queueParams?.page || 0}
+                  onChange={(newPage) => {
+                    if (queueParams) {
+                      setQueueParams({ ...queueParams, page: newPage });
+                    }
+                  }}
+                />
+              </Center>
+            </Grid.Col>
+          </Grid>
         </Card.Section>
       </Card>
     </Overlay>,

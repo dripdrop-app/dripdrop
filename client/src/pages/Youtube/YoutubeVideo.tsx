@@ -1,5 +1,5 @@
 import { AspectRatio, Center, Divider, Grid, Loader, Stack, Title } from "@mantine/core";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
 
@@ -12,7 +12,7 @@ import { useBackgroundPlayer } from "../../providers/BackgroundPlayerProvider";
 const YoutubeVideo = () => {
   const { id } = useParams();
   const videoStatus = useYoutubeVideoQuery({ videoId: id || "", relatedVideosLength: 4 }, { skip: !id });
-  const { playerRef } = useBackgroundPlayer();
+  const { setPlaying } = useBackgroundPlayer();
 
   const { relatedVideos, video } = useMemo(
     () =>
@@ -21,8 +21,6 @@ const YoutubeVideo = () => {
         : { video: null, relatedVideos: null },
     [videoStatus.data]
   );
-
-  // TODO: Figure out how to test pause i =n sentry
 
   return (
     <Stack p="md">
@@ -36,7 +34,7 @@ const YoutubeVideo = () => {
             <title>{video.title}</title>
           </Helmet>
           <AspectRatio ratio={18 / 8}>
-            <VideoPlayer video={video} playing={true} />
+            <VideoPlayer video={video} playing={true} onPlay={() => setPlaying(false)} />
           </AspectRatio>
           <VideoInformation video={video} />
           <Divider />
