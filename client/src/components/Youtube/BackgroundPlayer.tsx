@@ -73,7 +73,7 @@ const BackgroundPlayer = () => {
 
   useEffect(() => {
     setVideoProgress({ played: 0, duration: 0 });
-  }, [currentVideo]);
+  }, [currentVideo?.id]);
 
   useEffect(() => {
     setQueueParams(params);
