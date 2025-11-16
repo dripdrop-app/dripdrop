@@ -46,7 +46,7 @@ const YoutubeChannel = () => {
           </Flex>
         </Center>
       </Box>
-      <VideosView channelId={channel.id} showPlayInBackground />
+      <VideosView channelId={channel.id} />
     </Stack>
   );
 };
